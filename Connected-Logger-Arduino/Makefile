@@ -44,7 +44,7 @@ APP_LIBS_LIST = Wire
 #	SpacebrewYun SPIFlash Temboo Time TimeLib Timezone TinyWireM Twitter 
 #	U8glib Ubidots 
 #
-USER_LIBS_LIST = MAX17043 RTClib Adafruit_FRAM_I2C Time
+USER_LIBS_LIST = MAX17043 RTClib Adafruit_FRAM_I2C Time DS3232RTC
 
 # List local libraries here
 # default = empty = all
