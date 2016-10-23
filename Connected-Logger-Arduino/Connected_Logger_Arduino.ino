@@ -273,6 +273,7 @@ void setup()
         BlinkForever();
     }
     // We need to set an Alarm or Two in order to ensure that the Simblee is put to sleep at night
+    /*
     RTC.squareWave(SQWAVE_NONE);            //Disable the default square wave of the SQW pin.
     RTC.alarm(ALARM_1);                     // This will clear the Alarm flags
     RTC.alarm(ALARM_2);                     // This will clear the Alarm flags
@@ -282,6 +283,7 @@ void setup()
     //RTC.setAlarm(ALM2_MATCH_MINUTES,00,47,00,0); // Wake Alarm - for debugging
     RTC.alarmInterrupt(ALARM_2, true);      // Connect the Interrupt to the Alarms (or not)
     RTC.alarmInterrupt(ALARM_1, true);
+     */
     GiveUpTheBus();
     
     
@@ -895,6 +897,7 @@ void sleepNow()         // here we put the arduino to sleep
     GiveUpTheBus();
     
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // sleep mode is set here
+    noInterrupts ();          // make sure we don't get interrupted before we sleep
     
     sleep_enable();          // enables the sleep bit in the mcucr register
     // so sleep is possible. just a safety pin
@@ -919,6 +922,7 @@ void sleepNow()         // here we put the arduino to sleep
      * In all but the IDLE sleep modes only LOW can be used.
      */
     attachInterrupt(digitalPinToInterrupt(INT2PIN),WakeUpNow, LOW); // use interrupt and run function
+      interrupts ();           // interrupts allowed now, next instruction WILL be executed
     
     sleep_mode();            // here the device is actually put to sleep!!
     // THE PROGRAM CONTINUES FROM HERE AFTER WAKING UP
