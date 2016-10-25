@@ -44,12 +44,12 @@ APP_LIBS_LIST = Wire
 #	SpacebrewYun SPIFlash Temboo Time TimeLib Timezone TinyWireM Twitter 
 #	U8glib Ubidots 
 #
-USER_LIBS_LIST = MAX17043 RTClib Adafruit_FRAM_I2C Time DS3232RTC
+USER_LIBS_LIST = MAX17043 Adafruit_FRAM_I2C Time DS3232RTC
 
 # List local libraries here
 # default = empty = all
 #
-LOCAL_LIBS_LIST = i2c
+LOCAL_LIBS_LIST = i2c digitalWriteFast
 
 # List core, application and user's libraries to be excluded
 # For example, WiFi may crash on Arduino 1.0.2, Esplora on Arduino 1.0.3, Firmata on Teensy 3.0,

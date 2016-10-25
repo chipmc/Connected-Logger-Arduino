@@ -66,22 +66,28 @@
 #if V9BOARD                    // These are the pin assignments for the v9 board
 #define ALARMPIN 3         // This one will be used for the RTC Alarm in v9
 #define INT2PIN 2         // This is the interrupt pin that registers taps
-#define I2CPIN 5            // This is a pin which connects to the i2c header - future use
+#define INTNUMBER 0         // so I don't have to use the lookup function
+#define SENSORPIN 5            // This is a pin which connects to the i2c header - future use
 #define I2CPWR 8            // Turns the i2c port on and off
 #define RESETPIN 16         // This a modification using a bodge wire
+#define TALKPIN 14           // This is the open-drain line for signaling i2c mastery (A0 on the Uno is 14)
+#define THE32KPIN 15      // This is a 32k squarewave from the DS3231 (A1 on the Uno is 15)
 #else                      // These are the pin assignments for the v8b board
-#define INT1PIN 2         // Not used now but wired for future use
+#define SENSORPIN 2         // Not used now but wired for future use
 #define INT2PIN 3         // This is the interrupt pin that registers taps
+#define INTNUMBER 1
 #define ALARMPIN 5         // This is the pin with the RTC Alarm clock - not used on Arduino side
 #define I2CPWR 8            // Turns the i2c port on and off
 #define RESETPIN 16         // This a modification using a bodge wire
+#define TALKPIN = 14           // This is the open-drain line for signaling i2c mastery (A0 on the Uno is 14)
+#define THE32KPIN = 15      // This is a 32k squarewave from the DS3231 (A1 on the Uno is 15)
 #endif
 
-//Time Period Deinifinitions - used for debugging
+//Time Period Definitions - used for debugging
 #define HOURLYPERIOD hour(t)   // Normally hour(t) but can use minute(t) for debugging
 #define DAILYPERIOD day(t) // Normally day(t) but can use minute(t) or hour(t) for debugging
 
-//These defines let me change the memory map without hunting through the whole program
+//These defines let me change the memory map and configuration without hunting through the whole program
 #define VERSIONNUMBER 7      // Increment this number each time the memory map is changed
 #define WORDSIZE 8            // For the Word size
 #define PAGESIZE 4096         // Memory size in bytes / word size - 256kb FRAM
@@ -116,6 +122,7 @@
 #define PARKOPENS 7
 
 
+
 // Include application, user and local libraries
 #include "i2c.h"                // not the wire library, can't use pull-ups
 #include <avr/sleep.h>          // For Sleep Code
@@ -125,11 +132,11 @@
 #include "DS3232RTC.h"          //http://github.com/JChristensen/DS3232RTC
 #include "Time.h"               //http://www.arduino.cc/playground/Code/Time
 #include "Adafruit_FRAM_I2C.h"  // Library for FRAM functions
+#include "digitalWriteFast.h"   // Try to cut down on overhead for timing sensitive IO - https://github.com/NicksonYap/digitalWriteFast
 #include "FRAMcommon.h"         // Where I put all the common FRAM read and write extensions
 
 
 // Prototypes
-// Prototypes From the included libraries
 MAX17043 batteryMonitor;                      // Init the Fuel Gauge
 
 // Prototypes for i2c functions
@@ -147,11 +154,10 @@ void enable32Khz(uint8_t enable);  // Need to turn on the 32k square wave for bu
 void LogHourlyEvent(time_t LogTime); // Log Hourly Event()
 void LogDailyEvent(time_t LogTime); // Log Daily Event()
 void CheckForBump(); // Check for bump
-void WakeUpNow();      // here the interrupt is handled after wakeup
+void pinChangeISR();      // Thie is the Interrrupt Service Routine for the pin change interrupt
 void sleepNow();  // Puts the Arduino to Sleep
 void NonBlockingDelay(int millisDelay);  // Used for a non-blocking delay
 int freeRam ();  // Debugging code, to check usage of RAM
-
 
 
 // Prototypes for Date and Time Functions
@@ -161,7 +167,6 @@ void toArduinoTime(time_t unixT); //Converts to Arduino Time for use with the RT
 
 
 // FRAM and Unix time variables
-unsigned int  framAddr;
 time_t t;
 int lastHour = 0;  // For recording the startup values
 int lastDate = 0;
@@ -198,13 +203,14 @@ byte accelThreshold = 100;           // accelThreshold value to decide when the 
 unsigned int debounce;               // This is a minimum debounce value - additional debounce set using pot or remote terminal
 volatile boolean tapFlag;           // Set when there has been a tep
 
+
 // Battery monitor
 float stateOfCharge = 0;
 
 //Menu and Program Variables
 unsigned long lastBump = 0;    // set the time of an event
 int ledState = LOW;            // variable used to store the last LED status, to toggle the light
-int delaySleep = 3000;         // Wait until going back to sleep so we can enter commands
+int delaySleep = 500;         // Wait until going back to sleep so we can enter commands
 int menuChoice=0;              // Menu Selection
 boolean refreshMenu = true;       //  Tells whether to write the menu
 boolean inTest = false;            // Are we in a test or not
@@ -222,25 +228,27 @@ void setup()
     Serial.begin(9600);                   // Initialize communications with the terminal
     Serial.print(F("Trail-Counter-Arduino - release "));
     Serial.println(releaseNumber);
-    pinMode(REDLED, OUTPUT);              // declare the Red LED Pin as an output
-    pinMode(YELLOWLED, OUTPUT);           // declare the Yellow LED Pin as as OUTPUT
-    pinMode(LEDPWR, OUTPUT);            // declare the Power LED pin as as OUTPUT
-    digitalWrite(LEDPWR, LOW);          // Turn on the power to the LEDs at startup for as long as is set in LEDsonTime
-    pinMode(INT2PIN, INPUT);            // Set up the interrupt pins, they're set as active low with an external pull-up
-    pinMode(I2CPWR, OUTPUT);
-    digitalWrite(I2CPWR, HIGH);         // Turns on the i2c port
-    pinMode(RESETPIN,INPUT);            // Just to make sure - if set to output, you cant program the SIMBLEE
-    
+    pinModeFast(REDLED, OUTPUT);              // declare the Red LED Pin as an output
+    pinModeFast(YELLOWLED, OUTPUT);           // declare the Yellow LED Pin as as OUTPUT
+    pinModeFast(LEDPWR, OUTPUT);            // declare the Power LED pin as as OUTPUT
+    digitalWriteFast(LEDPWR, LOW);          // Turn on the power to the LEDs at startup for as long as is set in LEDsonTime
+    pinModeFast(I2CPWR, OUTPUT);
+    digitalWriteFast(I2CPWR, HIGH);         // Turns on the i2c port
+    pinModeFast(RESETPIN,INPUT);            // Just to make sure - if set to output, you cant program the SIMBLEE
+    pinModeFast(INT2PIN, INPUT);            // Set up the interrupt pins, they're set as active low with an external pull-up
+    pinModeFast(THE32KPIN,INPUT);         // These are the pins tha are used to negotiate for the i2c bus
+    pinModeFast(TALKPIN,INPUT);             // These are the pins tha are used to negotiate for the i2c bus
+    pinModeFast(SENSORPIN,OUTPUT);
     
     enable32Khz(1); // turns on the 32k squarewave - to moderate access to the i2c bus
-    
+
     TakeTheBus(); // Need th i2c bus for initializations
-    if (fram.begin()) {  // you can stick the new i2c addr in here, e.g. begin(0x51);
-        Serial.println(F("Found I2C FRAM"));
-    } else {
-        Serial.println(F("No I2C FRAM found ... check your connections"));
-        BlinkForever();
-    }
+        if (fram.begin()) {  // you can stick the new i2c addr in here, e.g. begin(0x51);
+            Serial.println(F("Found I2C FRAM"));
+        } else {
+            Serial.println(F("No I2C FRAM found ... check your connections"));
+            BlinkForever();
+        }
     GiveUpTheBus(); // Done with i2c initializations Arduino gives up the bus here.
     
     
@@ -262,30 +270,29 @@ void setup()
                 BlinkForever();
         }
     }
-    
+ 
+ 
     TakeTheBus();
-    batteryMonitor.reset();               // Initialize the battery monitor
-    batteryMonitor.quickStart();
-    setSyncProvider(RTC.get);              // Set up the clock as we will control it and the alarms here
-    Serial.println(F("RTC Sync"));
-    if (timeStatus() != timeSet) {
-        Serial.println(F(" time sync fail!"));
-        BlinkForever();
-    }
-    // We need to set an Alarm or Two in order to ensure that the Simblee is put to sleep at night
-    /*
-    RTC.squareWave(SQWAVE_NONE);            //Disable the default square wave of the SQW pin.
-    RTC.alarm(ALARM_1);                     // This will clear the Alarm flags
-    RTC.alarm(ALARM_2);                     // This will clear the Alarm flags
-    RTC.setAlarm(ALM1_MATCH_HOURS,00,00,PARKCLOSES,0); // Set the evening Alarm
-    RTC.setAlarm(ALM2_MATCH_HOURS,00,00,PARKOPENS,0); // Set the morning Alarm
-    //RTC.setAlarm(ALM1_MATCH_MINUTES,00,45,00,0); // Start Alarm - for debugging
-    //RTC.setAlarm(ALM2_MATCH_MINUTES,00,47,00,0); // Wake Alarm - for debugging
-    RTC.alarmInterrupt(ALARM_2, true);      // Connect the Interrupt to the Alarms (or not)
-    RTC.alarmInterrupt(ALARM_1, true);
-     */
-    GiveUpTheBus();
+        batteryMonitor.reset();               // Initialize the battery monitor
+        batteryMonitor.quickStart();
+        setSyncProvider(RTC.get);              // Set up the clock as we will control it and the alarms here
+        Serial.println(F("RTC Sync"));
+        if (timeStatus() != timeSet) {
+            Serial.println(F(" time sync fail!"));
+            BlinkForever();
+        }
+        // We need to set an Alarm or Two in order to ensure that the Simblee is put to sleep at night
     
+        RTC.squareWave(SQWAVE_NONE);            //Disable the default square wave of the SQW pin.
+        RTC.alarm(ALARM_1);                     // This will clear the Alarm flags
+        RTC.alarm(ALARM_2);                     // This will clear the Alarm flags
+        RTC.setAlarm(ALM1_MATCH_HOURS,00,00,PARKCLOSES,0); // Set the evening Alarm
+        RTC.setAlarm(ALM2_MATCH_HOURS,00,00,PARKOPENS,0); // Set the morning Alarm
+        //RTC.setAlarm(ALM1_MATCH_MINUTES,00,45,00,0); // Start Alarm - for debugging
+        //RTC.setAlarm(ALM2_MATCH_MINUTES,00,47,00,0); // Wake Alarm - for debugging
+        RTC.alarmInterrupt(ALARM_2, true);      // Connect the Interrupt to the Alarms (or not)
+        RTC.alarmInterrupt(ALARM_1, true);
+    GiveUpTheBus();
     
     // Import the accelSensitivity and Debounce values from memory
     Serial.print(F("Sensitivity set to: "));
@@ -298,19 +305,19 @@ void setup()
     FRAMwrite8(CONTROLREGISTER, toggleStartStop);       // Reset the control register and start the test
     
     TakeTheBus();  // Need to initialize the accelerometer
-    // Read the WHO_AM_I register of the Accelerometer, this is a good test of communication
-    byte c = readRegister(0x0D);  // Read WHO_AM_I register
-    if (c == 0x2A) // WHO_AM_I should always be 0x2A
-    {
-        initMMA8452(accelFullScaleRange, dataRate);  // init the accelerometer if communication is OK
-        Serial.println(F("MMA8452Q is online..."));
-    }
-    else
-    {
-        Serial.print(F("Could not connect to MMA8452Q: 0x"));
-        Serial.println(c, HEX);
-        BlinkForever() ; // Loop forever if communication doesn't happen
-    }
+        // Read the WHO_AM_I register of the Accelerometer, this is a good test of communication
+        byte c = readRegister(0x0D);  // Read WHO_AM_I register
+        if (c == 0x2A) // WHO_AM_I should always be 0x2A
+        {
+            initMMA8452(accelFullScaleRange, dataRate);  // init the accelerometer if communication is OK
+            Serial.println(F("MMA8452Q is online..."));
+        }
+        else
+        {
+            Serial.print(F("Could not connect to MMA8452Q: 0x"));
+            Serial.println(c, HEX);
+            BlinkForever() ; // Loop forever if communication doesn't happen
+        }
     GiveUpTheBus(); // Done!
     
     Serial.print(F("Free memory: "));
@@ -320,6 +327,7 @@ void setup()
 // Add loop code
 void loop()
 {
+    
     if (refreshMenu) {
         refreshMenu = 0;
         Serial.println(F("Remote Trail Counter Program Menu"));
@@ -333,7 +341,7 @@ void loop()
         Serial.println(F("7 - Start / stop counting"));
         Serial.println(F("8 - Dump hourly counts"));
         Serial.println(F("9 - Last 14 day's counts"));
-        delay(100);
+        NonBlockingDelay(100);
     }
     if (Serial.available() >> 0) {      // Only enter if there is serial data in the buffer
         switch (Serial.read()) {          // Read the buffer
@@ -343,11 +351,11 @@ void loop()
             case '1':   // Display Current Status Information
                 Serial.print(F("Current Time:"));
                 TakeTheBus();
-                t = RTC.get();
+                    t = RTC.get();
                 GiveUpTheBus();
                 PrintTimeDate(t);  // Give and take the bus are in this function as it gets the current time
                 TakeTheBus();
-                stateOfCharge = batteryMonitor.getSoC();
+                    stateOfCharge = batteryMonitor.getSoC();
                 GiveUpTheBus();
                 Serial.print(F("State of charge: "));
                 Serial.print(stateOfCharge);
@@ -465,14 +473,14 @@ void loop()
         }
         Serial.read();  // Clear the serial buffer
     }
+
     if (inTest == 1) {
         CheckForBump();
         if (millis() >= lastBump + delaySleep) {
-            Serial.print(F("Entering Sleep mode..."));
-            delay(100);     // this delay is needed, the sleep function will provoke a Serial error otherwise!!
             sleepNow();     // sleep function called here
         }
     }
+
     if (millis() >= lastCheckedControlRegister + controlRegisterDelay) {
         controlRegisterValue = FRAMread8(CONTROLREGISTER);
         oldControlRegisterValue = controlRegisterValue;
@@ -545,12 +553,12 @@ void loop()
 
 void CheckForBump() // This is where we check to see if an interrupt is set when not asleep or act on a tap that woke the Arduino
 {
-    if (digitalRead(INT2PIN)==0)    // If int2 goes LOW, either p/l has changed or there's been a single/double tap
+    if (digitalReadFast(INT2PIN)==0)    // If int2 goes LOW, either p/l has changed or there's been a single/double tap
     {
         Serial.println("Int2Pin is low!");
         TakeTheBus();
-        byte source = readRegister(0x0C);  // Read the interrupt source reg.
-        readRegister(0x22);  // Reads the PULSE_SRC register to reset it
+            byte source = readRegister(0x0C);  // Read the interrupt source reg.
+            readRegister(0x22);  // Reads the PULSE_SRC register to reset it
         GiveUpTheBus();
         if ((source & 0x08)==0x08 && millis() >= lastBump + debounce) { // We are only interested in the TAP register and ignore debounced taps
             tapFlag = true;     // Was a Tap and outside of debounce time
@@ -562,7 +570,7 @@ void CheckForBump() // This is where we check to see if an interrupt is set when
         tapFlag = false;        // Reset tap Flag for next time
         lastBump = millis();    // Reset last bump timer
         TakeTheBus();
-        t = RTC.get();
+            t = RTC.get();
         GiveUpTheBus();
         if (HOURLYPERIOD != currentHourlyPeriod) {
             LogHourlyEvent(t);
@@ -581,6 +589,7 @@ void CheckForBump() // This is where we check to see if an interrupt is set when
         Serial.print(dailyPersonCount);
         Serial.print(F("  Time: "));
         PrintTimeDate(t);
+        Serial.println("");
         ledState = !ledState;              // toggle the status of the LEDPIN:
         digitalWrite(REDLED, ledState);    // update the LED pin itself
     }
@@ -612,15 +621,15 @@ void StartStopTest(boolean startTest)  // Since the test can be started from the
             LogHourlyEvent(t);
         }
         TakeTheBus();
-        readRegister(0x22);     // Reads the PULSE_SRC register to reset it
+            readRegister(0x22);     // Reads the PULSE_SRC register to reset it
         GiveUpTheBus();
         Serial.println(F("Test Started"));
     }
     else {
         inTest = false;
         TakeTheBus();
-        readRegister(0x22);  // Reads the PULSE_SRC register to reset it
-        t = RTC.get();
+            readRegister(0x22);  // Reads the PULSE_SRC register to reset it
+            t = RTC.get();
         GiveUpTheBus();
         FRAMwrite16(CURRENTDAILYCOUNTADDR, dailyPersonCount);   // Load Daily Count to memory
         FRAMwrite16(CURRENTHOURLYCOUNTADDR, hourlyPersonCount);  // Load Hourly Count to memory
@@ -642,7 +651,7 @@ void LogHourlyEvent(time_t LogTime) // Log Hourly Event()
     FRAMwrite32(pointer, LogTime);   // Write to FRAM - this is the end of the period
     FRAMwrite16(pointer+HOURLYCOUNTOFFSET,hourlyPersonCount);
     TakeTheBus();
-    stateOfCharge = batteryMonitor.getSoC();
+        stateOfCharge = batteryMonitor.getSoC();
     GiveUpTheBus();
     FRAMwrite8(pointer+HOURLYBATTOFFSET,stateOfCharge);
     unsigned int newHourlyPointerAddr = (FRAMread16(HOURLYPOINTERADDR)+1) % HOURLYCOUNTNUMBER;  // This is where we "wrap" the count to stay in our memory space
@@ -663,7 +672,7 @@ void LogDailyEvent(time_t LogTime) // Log Daily Event()
     FRAMwrite8(pointer+DAILYDATEOFFSET,day(LogTime));  // Write to FRAM - this is the end of the period  - should be time.date
     FRAMwrite16(pointer+DAILYCOUNTOFFSET,dailyPersonCount);
     TakeTheBus();
-    stateOfCharge = batteryMonitor.getSoC();
+        stateOfCharge = batteryMonitor.getSoC();
     GiveUpTheBus();
     FRAMwrite8(pointer+DAILYBATTOFFSET,stateOfCharge);
     byte newDailyPointerAddr = (FRAMread8(DAILYPOINTERADDR)+1) % DAILYCOUNTNUMBER;  // This is where we "wrap" the count to stay in our memory space
@@ -735,7 +744,6 @@ void PrintTimeDate(time_t t)  // Prints time and date to the console
     Serial.print(second(t), DEC);
     Serial.println();
 }
-
 
 void initMMA8452(byte fsr, byte dataRate)   // Initialize the MMA8452 registers
 {
@@ -843,17 +851,17 @@ void writeRegister(unsigned char address, unsigned char data)   // Writes a sing
     i2cSendStop();
 }
 
-void WakeUpNow()        // Sensor Interrupt Handler
+void pinChangeISR()        // Sensor Interrupt Handler
 {
     // execute code here after wake-up before returning to the loop() function
     // timers and code using timers (serial.print and more...) will not work here.
     // we don't really need to execute any special functions here, since we
     // just want the thing to wake up
     sleep_disable();         // first thing after waking from sleep is to disable sleep...
-    detachInterrupt(digitalPinToInterrupt(INT2PIN));      // disables interrupt
+    detachInterrupt(INTNUMBER);      // disables interrupt
     TakeTheBus();
-    byte source = readRegister(0x0C);  // Read the interrupt source reg.
-    readRegister(0x22);  // Reads the PULSE_SRC register to reset it
+        byte source = readRegister(0x0C);  // Read the interrupt source reg.
+        readRegister(0x22);  // Reads the PULSE_SRC register to reset it
     GiveUpTheBus();
     if ((source & 0x08)==0x08) { // We are only interested in the TAP register so read that
         tapFlag = true;
@@ -861,70 +869,18 @@ void WakeUpNow()        // Sensor Interrupt Handler
     else tapFlag = false;
 }
 
+
 void sleepNow()         // here we put the arduino to sleep
 {
-    /* Now is the time to set the sleep mode. In the Atmega8 datasheet
-     * http://www.atmel.com/dyn/resources/prod_documents/doc2486.pdf on page 35
-     * there is a list of sleep modes which explains which clocks and
-     * wake up sources are available in which sleep mode.
-     *
-     * In the avr/sleep.h file, the call names of these sleep modes are to be found:
-     *
-     * The 5 different modes are:
-     *     SLEEP_MODE_IDLE         -the least power savings
-     *     SLEEP_MODE_ADC
-     *     SLEEP_MODE_PWR_SAVE
-     *     SLEEP_MODE_STANDBY
-     *     SLEEP_MODE_PWR_DOWN     -the most power savings
-     *
-     * For now, we want as much power savings as possible, so we
-     * choose the according
-     * sleep mode: SLEEP_MODE_PWR_DOWN
-     *
-     */
-    TakeTheBus();       // Make sure the interrupt flag is cleared before we attach it
-    byte c = readRegister(0x0D);  // Read WHO_AM_I register to make sure the i2c bus is functioning before we go to sleep
-    if (c == 0x2A) // WHO_AM_I should always be 0x2A
-    {
-        readRegister(0x22);  // Reads the PULSE_SRC register to reset it
-    }
-    else
-    {
-        lastBump = millis();              // Reset last bump timer to give us a couple more secs for the i2c bus to clear
-        Serial.println("Could not read i2c data, not going to sleep");
-        return;         // Get out of this routine
-    }
-    GiveUpTheBus();
-    
+    // Here is a great tutorial on interrupts and sleep: http://www.gammon.com.au/interrupts
+    Serial.print(F("Entering Sleep mode..."));
+    Serial.flush();
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // sleep mode is set here
     noInterrupts ();          // make sure we don't get interrupted before we sleep
-    
     sleep_enable();          // enables the sleep bit in the mcucr register
-    // so sleep is possible. just a safety pin
-    
-    /* Now it is time to enable an interrupt. We do it here so an
-     * accidentally pushed interrupt button doesn't interrupt
-     * our running program. if you want to be able to run
-     * interrupt code besides the sleep function, place it in
-     * setup() for example.
-     *
-     * In the function call attachInterrupt(A, B, C)
-     * A   can be either 0 or 1 for interrupts on pin 2 or 3.
-     *
-     * B   Name of a function you want to execute at interrupt for A.
-     *
-     * C   Trigger mode of the interrupt pin. can be:
-     *             LOW        a low level triggers
-     *             CHANGE     a change in level triggers
-     *             RISING     a rising edge of a level triggers
-     *             FALLING    a falling edge of a level triggers
-     *
-     * In all but the IDLE sleep modes only LOW can be used.
-     */
-    attachInterrupt(digitalPinToInterrupt(INT2PIN),WakeUpNow, LOW); // use interrupt and run function
-      interrupts ();           // interrupts allowed now, next instruction WILL be executed
-    
-    sleep_mode();            // here the device is actually put to sleep!!
+    attachInterrupt(INTNUMBER,pinChangeISR, LOW); // use interrupt and run function
+    interrupts ();           // interrupts allowed now, next instruction WILL be executed
+    sleep_cpu();            // here the device is actually put to sleep!!
     // THE PROGRAM CONTINUES FROM HERE AFTER WAKING UP
     Serial.println("Waking up");
 }
@@ -953,9 +909,9 @@ void BlinkForever() // When something goes badly wrong...
 {
     Serial.println(F("Error - Reboot"));
     while(1) {
-        digitalWrite(REDLED,HIGH);
+        digitalWriteFast(REDLED,HIGH);
         delay(200);
-        digitalWrite(REDLED,LOW);
+        digitalWriteFast(REDLED,LOW);
         delay(200);
     }
 }

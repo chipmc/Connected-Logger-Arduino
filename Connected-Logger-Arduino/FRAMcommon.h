@@ -23,7 +23,7 @@ void FRAMwrite8(unsigned int address, uint8_t value); //Writes a 32-bit word
 void ResetFRAM();  // This will reset the FRAM - set the version and preserve delay and sensitivity
 
 // Variables
-boolean clockHighorLow = LOW;  // Set this as HIGH for for one Master and LOW for the other.
+boolean clockHighorLow = LOW;  // Set this as HIGH for one Master and LOW for the other.
 
 // Prototypes for i2c functions
 boolean GiveUpTheBus(); // Give up the i2c bus
@@ -33,10 +33,8 @@ void enable32Khz(uint8_t enable);  // Need to turn on the 32k square wave for bu
 // Prototypes for General Functions
 void NonBlockingDelay(int millisDelay);  // Used for a non-blocking delay
 
-// Pin definitions
-// Pin Value Variables
-int TalkPin = A0;  // This is the open-drain line for signaling i2c mastery
-int The32kPin = A1;  // This is a 32k squarewave from the DS3231
+// Pin definitions are in the #defines section of the main program
+
 
 
 uint8_t FRAMread8(unsigned int address)
@@ -149,23 +147,23 @@ boolean TakeTheBus()
 {
     //Serial.print(F(Asking for the bus..."));
     if (clockHighorLow) {
-        while(digitalRead(The32kPin)) {} // The Simblee will only read the Talk line when SQW pin goes low
+        while(digitalReadFast(THE32KPIN)) {} // The Simblee will only read the Talk line when SQW pin goes low
     }
-    else while(!(digitalRead(The32kPin))) {} // The Simblee will only read the Talk line when SQW pin goes low
+    else while(!(digitalReadFast(THE32KPIN))) {} // The Simblee will only read the Talk line when SQW pin goes low
 
-    while (!digitalRead(TalkPin)) { // Only proceed once the TalkPin is high
+    while (!digitalReadFast(TALKPIN)) { // Only proceed once the TalkPin is high
         NonBlockingDelay(50);
     }
-    pinMode(TalkPin,OUTPUT);        // Change to output
-    digitalWrite(TalkPin,LOW);      // Claim the bus by bringing the TalkPin LOW
+    pinModeFast(TALKPIN,OUTPUT);        // Change to output
+    digitalWriteFast(TALKPIN,LOW);      // Claim the bus by bringing the TalkPin LOW
     //Serial.println(F("..We have the bus"));
     return 1;                       // We have it
 }
 
 boolean GiveUpTheBus()
 {
-    digitalWrite(TalkPin,HIGH); // Not sure if this is needed - still for completeness.
-    pinMode(TalkPin,INPUT_PULLUP);  // Start listening again
+    digitalWriteFast(TALKPIN,HIGH); // Not sure if this is needed - still for completeness.
+    pinModeFast(TALKPIN,INPUT_PULLUP);  // Start listening again
     //Serial.println("Simblee: We gave up the Bus");
     return 1;
 }
