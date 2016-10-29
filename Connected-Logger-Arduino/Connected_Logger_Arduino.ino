@@ -117,7 +117,7 @@
 #define YELLOWLED 6       // The yellow LED
 #define LEDPWR 7          // This pin turns on and off the LEDs
 // Finally, here are the variables I want to change often and pull them all together here
-#define SOFTWARERELEASENUMBER "1.3.3"
+#define SOFTWARERELEASENUMBER "1.3.5"
 #define PARKCLOSES 20
 #define PARKOPENS 7
 
@@ -150,8 +150,8 @@ void initMMA8452(byte fsr, byte dataRate);  // Initialize the MMA8452
 void StartStopTest(boolean startTest); // Since the test can be started from the serial menu or the Simblee - created a function
 void BlinkForever(); // Ends execution
 void enable32Khz(uint8_t enable);  // Need to turn on the 32k square wave for bus moderation
-void LogHourlyEvent(time_t LogTime); // Log Hourly Event()
-void LogDailyEvent(time_t LogTime); // Log Daily Event()
+void LogHourlyEvent(); // Log Hourly Event()
+void LogDailyEvent(); // Log Daily Event()
 void CheckForBump(); // Check for bump
 void pinChangeISR();      // Thie is the Interrrupt Service Routine for the pin change interrupt
 void sleepNow();  // Puts the Arduino to Sleep
@@ -167,8 +167,8 @@ void toArduinoTime(time_t unixT); //Converts to Arduino Time for use with the RT
 
 // FRAM and Unix time variables
 time_t t;
-int lastHour = 0;  // For recording the startup values
-int lastDate = 0;   // These values make sure we record events if time has lapsed
+byte lastHour = 0;  // For recording the startup values
+byte lastDate = 0;   // These values make sure we record events if time has lapsed
 unsigned int hourlyPersonCount = 0;  // hourly counter
 unsigned int dailyPersonCount = 0;   //  daily counter
 byte currentHourlyPeriod;    // This is where we will know if the period changed
@@ -207,7 +207,7 @@ float stateOfCharge = 0;            // stores battery charge level value
 
 //Menu and Program Variables
 unsigned long lastBump = 0;         // set the time of an event
-int ledState = LOW;                 // variable used to store the last LED status, to toggle the light
+boolean ledState = LOW;                 // variable used to store the last LED status, to toggle the light
 int delaySleep = 500;               // Wait until going back to sleep so we can enter commands
 int menuChoice=0;                   // Menu Selection
 boolean refreshMenu = true;         //  Tells whether to write the menu
@@ -238,9 +238,10 @@ void setup()
     pinModeFast(THE32KPIN,INPUT);           // These are the pins tha are used to negotiate for the i2c bus
     pinModeFast(TALKPIN,INPUT);             // These are the pins tha are used to negotiate for the i2c bus
 
-    
+
     enable32Khz(1); // turns on the 32k squarewave - to moderate access to the i2c bus
 
+    
     TakeTheBus(); // Need th i2c bus for initializations
         if (fram.begin()) {  // you can stick the new i2c addr in here, e.g. begin(0x51);
             Serial.println(F("Found I2C FRAM"));
@@ -294,7 +295,7 @@ void setup()
     
     // Import the accelSensitivity and Debounce values from memory
     Serial.print(F("Sensitivity set to: "));
-    accelSensitivity = FRAMread8(SENSITIVITYADDR);
+    accelSensitivity = FRAMread8(10-SENSITIVITYADDR);
     Serial.println(accelSensitivity);
     Serial.print(F("Debounce set to: "));
     debounce = FRAMread16(DEBOUNCEADDR);
@@ -380,7 +381,7 @@ void loop()
                 }
                 accelInputValue = (Serial.parseInt());
                 Serial.print(F("accelSensitivity set to: "));
-                Serial.println(10-accelInputValue);
+                Serial.println(accelInputValue);
                 FRAMwrite8(SENSITIVITYADDR, 10-accelInputValue);
                 TakeTheBus();
                     initMMA8452(accelFullScaleRange, dataRate);  // init the accelerometer if communication is OK
@@ -535,6 +536,7 @@ void loop()
             }
             FRAMwrite8(CONTROLREGISTER, controlRegisterValue & clearSimbleeReset);  // Reset the Simblee Sleep flag
         }
+    
         else if (LEDSon && millis() >= LEDSonTime)
         {
             digitalWrite(LEDPWR,HIGH);
@@ -559,11 +561,12 @@ void CheckForBump() // This is where we check to see if an interrupt is set when
             TakeTheBus();
                 t = RTC.get();
             GiveUpTheBus();
+            if (t == 0) return;     // This means there was an error in reading the real time clock - very rare in testing so will simply throw out this count
             if (HOURLYPERIOD != currentHourlyPeriod) {
-                LogHourlyEvent(t);
+                LogHourlyEvent();
             }
             if (DAILYPERIOD != currentDailyPeriod) {
-                LogDailyEvent(t);
+                LogDailyEvent();
             }
             hourlyPersonCount++;                    // Increment the PersonCount
             FRAMwrite16(CURRENTHOURLYCOUNTADDR, hourlyPersonCount);  // Load Hourly Count to memory
@@ -602,11 +605,11 @@ void StartStopTest(boolean startTest)  // Since the test can be started from the
         dailyPersonCount = FRAMread16(CURRENTDAILYCOUNTADDR);  // Load Daily Count from memory
         hourlyPersonCount = FRAMread16(CURRENTHOURLYCOUNTADDR);  // Load Hourly Count from memory
         if (currentDailyPeriod != lastDate) {
-            LogHourlyEvent(t);
-            LogDailyEvent(t);
+            LogHourlyEvent();
+            LogDailyEvent();
         }
         else if (currentHourlyPeriod != lastHour) {
-            LogHourlyEvent(t);
+            LogHourlyEvent();
         }
         TakeTheBus();
             readRegister(0x22);     // Reads the PULSE_SRC register to reset it
@@ -628,14 +631,13 @@ void StartStopTest(boolean startTest)  // Since the test can be started from the
     }
 }
 
-void LogHourlyEvent(time_t LogTime) // Log Hourly Event()
+void LogHourlyEvent() // Log Hourly Event()
 {
-    tmElements_t timeElement;
-    breakTime(LogTime, timeElement);
-    int newHour = timeElement.Hour;
+    tmElements_t timeElement;       // We will need to break down the current time
+    time_t LogTime = FRAMread32(CURRENTCOUNTSTIME);     // This is the last event recorded - this sets the hourly period
+    breakTime(LogTime, timeElement);                    // Break the time into its pieces
     unsigned int pointer = (HOURLYOFFSET + FRAMread16(HOURLYPOINTERADDR))*WORDSIZE;  // get the pointer from memory and add the offset
-    if (newHour < currentHourlyPeriod) newHour += 24;
-    LogTime -= (3600L*(newHour - currentHourlyPeriod)-60*timeElement.Minute - timeElement.Second); // So we need to back out the last hour(s)
+    LogTime -= 60*timeElement.Minute - timeElement.Second; // So, we need to subtract the minutes and seconds needed to take to the top of the hour
     FRAMwrite32(pointer, LogTime);   // Write to FRAM - this is the end of the period
     FRAMwrite16(pointer+HOURLYCOUNTOFFSET,hourlyPersonCount);
     TakeTheBus();
@@ -650,14 +652,14 @@ void LogHourlyEvent(time_t LogTime) // Log Hourly Event()
 }
 
 
-void LogDailyEvent(time_t LogTime) // Log Daily Event()
+void LogDailyEvent() // Log Daily Event()
 {
-    int pointer = (DAILYOFFSET + FRAMread8(DAILYPOINTERADDR))*WORDSIZE;  // get the pointer from memory and add the offset
     tmElements_t timeElement;
+    time_t LogTime = FRAMread32(CURRENTCOUNTSTIME);// This is the last event recorded - this sets the daily period
     breakTime(LogTime, timeElement);
-    LogTime -= 86400L- 3600*timeElement.Hour -60*timeElement.Minute - timeElement.Second;  // Logging for the previous day
-    FRAMwrite8(pointer,month(LogTime)); // should be time.month
-    FRAMwrite8(pointer+DAILYDATEOFFSET,day(LogTime));  // Write to FRAM - this is the end of the period  - should be time.date
+    int pointer = (DAILYOFFSET + FRAMread8(DAILYPOINTERADDR))*WORDSIZE;  // get the pointer from memory and add the offset
+    FRAMwrite8(pointer,timeElement.Month); // The month of the last count
+    FRAMwrite8(pointer+DAILYDATEOFFSET,timeElement.Day);  // Write to FRAM - this is the end of the period  - should be the day
     FRAMwrite16(pointer+DAILYCOUNTOFFSET,dailyPersonCount);
     TakeTheBus();
         stateOfCharge = batteryMonitor.getSoC();
