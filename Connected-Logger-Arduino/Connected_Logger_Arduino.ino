@@ -117,7 +117,7 @@
 #define YELLOWLED 6       // The yellow LED
 #define LEDPWR 7          // This pin turns on and off the LEDs
 // Finally, here are the variables I want to change often and pull them all together here
-#define SOFTWARERELEASENUMBER "1.3.5"
+#define SOFTWARERELEASENUMBER "1.3.6"
 #define PARKCLOSES 20
 #define PARKOPENS 7
 
@@ -208,7 +208,7 @@ float stateOfCharge = 0;            // stores battery charge level value
 //Menu and Program Variables
 unsigned long lastBump = 0;         // set the time of an event
 boolean ledState = LOW;                 // variable used to store the last LED status, to toggle the light
-int delaySleep = 500;               // Wait until going back to sleep so we can enter commands
+int delaySleep = 1500;               // Wait until going back to sleep so we can enter commands
 int menuChoice=0;                   // Menu Selection
 boolean refreshMenu = true;         //  Tells whether to write the menu
 boolean inTest = false;             // Are we in a test or not
@@ -763,8 +763,7 @@ void initMMA8452(byte fsr, byte dataRate)   // Initialize the MMA8452 registers
     writeRegister(0x24, accelSensitivity);  // 2. y thresh from 0 to 127, multiply the value by 0.0625g/LSB to get the accelThreshold
     writeRegister(0x25, accelSensitivity);  // 2. z thresh from 0 to 127, multiply the value by 0.0625g/LSB to get the accelThreshold
     writeRegister(0x26, 0xFF);  // 3. Max time limit at 100Hz odr, this is very dependent on data rate, see the app note
-    //writeRegister(0x27, 0x64);  // 4. 1000ms (at 100Hz odr) between taps min, this also depends on the data rate
-    writeRegister(0x27, 0x01);  // 4. 1000ms (at 100Hz odr) between taps min, this also depends on the data rate
+    writeRegister(0x27, 0x64);  // 4. 1000ms (at 100Hz odr) between taps min, this also depends on the data rate
     writeRegister(0x28, 0xFF);  // 5. 318ms (max value) between taps max
     
     // Set up interrupt 1 and 2
