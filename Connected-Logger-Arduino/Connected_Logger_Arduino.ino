@@ -61,10 +61,10 @@
 #else
 #define MMA8452_ADDRESS 0x1C
 #endif
-// There are some new pin assignments when using the new v9 board
-#define V9BOARD 1
-#if V9BOARD                    // These are the pin assignments for the v9 board
-#define ALARMPIN 3         // This one will be used for the RTC Alarm in v9
+// There are some new pin assignments when using the new v9 and v10 boards
+#define V910BOARD 1
+#if V910BOARD                    // These are the pin assignments for the v9 and v10 boards
+#define ALARMPIN 3         // This one will be used for the RTC Alarm in v9 and v10
 #define INT2PIN 2         // This is the interrupt pin that registers taps
 #define INTNUMBER 0         // so I don't have to use the lookup function
 #define SENSORPIN 5            // This is a pin which connects to the i2c header - future use
@@ -72,7 +72,7 @@
 #define RESETPIN 16         // This a modification using a bodge wire
 #define TALKPIN 14           // This is the open-drain line for signaling i2c mastery (A0 on the Uno is 14)
 #define THE32KPIN 15      // This is a 32k squarewave from the DS3231 (A1 on the Uno is 15)
-#else                      // These are the pin assignments for the v8b board
+#else                      // These are the pin assignments for the old v8 board
 #define SENSORPIN 2         // Not used now but wired for future use
 #define INT2PIN 3         // This is the interrupt pin that registers taps
 #define INTNUMBER 1
@@ -118,7 +118,7 @@
 #define LEDPWR 7          // This pin turns on and off the LEDs
 // Finally, here are the variables I want to change often and pull them all together here
 #define SOFTWARERELEASENUMBER "1.3.6"
-#define PARKCLOSES 20
+#define PARKCLOSES 19
 #define PARKOPENS 7
 
 
