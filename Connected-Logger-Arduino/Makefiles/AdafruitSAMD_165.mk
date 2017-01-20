@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -18,14 +18,14 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := Adafruit
-PLATFORM_TAG      = ARDUINO=10610 EMBEDXCODE=$(RELEASE_NOW) ADAFRUIT
-APPLICATION_PATH := $(ARDUINO_CC_PATH)
-PLATFORM_VERSION := SAMD $(ADAFRUIT_SAMD_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_TAG      = ARDUINO=10801 EMBEDXCODE=$(RELEASE_NOW) ADAFRUIT
+APPLICATION_PATH := $(ARDUINO_180_PATH)
+PLATFORM_VERSION := SAMD $(ADAFRUIT_SAMD_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(ADAFRUIT_SAMD_PATH)/hardware/samd/$(ADAFRUIT_SAMD_RELEASE)
 TOOL_CHAIN_PATH   = $(ARDUINO_SAMD_PATH)/tools/arm-none-eabi-gcc/4.8.3-2014q1
 CMSIS_PATH        = $(ARDUINO_SAMD_PATH)/tools/CMSIS/4.0.0-atmel
-OTHER_TOOLS_PATH  = $(ARDUINO_CC_PACKAGES_PATH)/arduino/tools
+OTHER_TOOLS_PATH  = $(ARDUINO_180_PACKAGES_PATH)/arduino/tools
 
 BUILD_CORE       = samd
 BOARDS_TXT      := $(HARDWARE_PATH)/boards.txt
@@ -39,7 +39,7 @@ BOARDS_TXT      := $(HARDWARE_PATH)/boards.txt
 ifeq ($(UPLOADER),bossac)
     USB_RESET        = python $(UTILITIES_PATH)/reset_1200.py
     UPLOADER         = bossac
-    UPLOADER_PATH    = $(OTHER_TOOLS_PATH)/bossac/$(BOSSAC_RELEASE)
+    UPLOADER_PATH    = $(OTHER_TOOLS_PATH)/bossac/$(ARDUINO_BOSSAC_RELEASE)
     UPLOADER_EXEC    = $(UPLOADER_PATH)/bossac
     UPLOADER_PORT    = $(subst /dev/,,$(AVRDUDE_PORT))
     UPLOADER_OPTS    = -i -d --port=$(UPLOADER_PORT) -U $(call PARSE_BOARD,$(BOARD_TAG),upload.native_usb) -i -e -w -v

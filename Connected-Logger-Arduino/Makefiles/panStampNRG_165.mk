@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,9 +17,9 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := panStamp
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_PANSTAMP_NRG ARDUINO_ARCH_MSP430 EMBEDXCODE=$(RELEASE_NOW) PANSTAMP_NRG
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_PANSTAMP_NRG ARDUINO_ARCH_MSP430 EMBEDXCODE=$(RELEASE_NOW) PANSTAMP_NRG
 APPLICATION_PATH := $(PANSTAMP_NRG_PATH)
-PLATFORM_VERSION := NRG $(PANSTAMP_MSP_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := NRG $(PANSTAMP_MSP_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/msp430/$(PANSTAMP_MSP_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/msp430-gcc/4.6.3
@@ -80,6 +80,7 @@ p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(A
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(p1100),$(wildcard $(dir)/*.cpp)) # */
 BUILD_APP_LIB_C_SRC   = $(foreach dir,$(p1100),$(wildcard $(dir)/*.c)) # */

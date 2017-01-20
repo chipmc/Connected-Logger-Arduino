@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,11 +17,11 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := RedBearLab
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_RBL_nRF51822 ARDUINO_ARCH_NRF51822 EMBEDXCODE=$(RELEASE_NOW) REDBEARLAB
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_RBL_nRF51822 ARDUINO_ARCH_NRF51822 EMBEDXCODE=$(RELEASE_NOW) REDBEARLAB
 APPLICATION_PATH := $(REDBEARLAB_NRF_PATH)
-PLATFORM_VERSION := nRF51822 $(REDBEARLAB_NRF_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := nRF51822 $(REDBEAR_NRF_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
-HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/nRF51822/$(REDBEARLAB_NRF_RELEASE)
+HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/nRF51822/$(REDBEAR_NRF_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/4.8.3-2014q1
 OTHER_TOOLS_PATH  = $(APPLICATION_PATH)/tools/bossac/1.3a-arduino
 
@@ -96,6 +96,7 @@ p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(A
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(p1100),$(wildcard $(dir)/*.cpp)) # */
 BUILD_APP_LIB_C_SRC   = $(foreach dir,$(p1100),$(wildcard $(dir)/*.c)) # */

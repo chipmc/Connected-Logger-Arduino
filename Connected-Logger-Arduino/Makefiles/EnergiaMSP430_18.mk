@@ -3,14 +3,15 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Sep 08, 2016 release 5.2.2
+# Last update: Nov 23, 2016 release 5.3.8
 
 
+include $(MAKEFILE_PATH)/About.mk
 
 # Energia LaunchPad MSP430 and FR5739 specifics
 # ----------------------------------
@@ -28,6 +29,7 @@ BUILD_CORE       := msp430
 PLATFORM_TAG      = ENERGIA=$(ENERGIA_RELEASE) ARDUINO=$(ARDUINO_RELEASE) EMBEDXCODE=$(RELEASE_NOW) ENERGIA_ARCH_MSP430 ENERGIA_$(BOARD_TAG) $(filter __%__ ,$(GCC_PREPROCESSOR_DEFINITIONS))
 
 OTHER_TOOLS_PATH  = $(ENERGIA_18_PATH)/hardware/tools/DSLite
+PLATFORM_VERSION := 'MSP430 (native) for Energia $(ENERGIA_RELEASE)'
 
 
 # Uploader
@@ -65,6 +67,7 @@ BOARDS_TXT       := $(APPLICATION_PATH)/hardware/energia/msp430/boards.txt
 #BOARDS_TXT      := $(APPLICATION_PATH)/hardware/msp430/boards.txt
 
 # Sketchbook/Libraries path
+# ----------------------------------
 # wildcard required for ~ management
 # ?ibraries required for libraries and Libraries
 #
@@ -157,7 +160,8 @@ VARIANT_PATH   = $(APPLICATION_PATH)/hardware/energia/msp430/variants/$(VARIANT)
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION   ?= -O0 -ggdb
+    OPTIMISATION   ?= -Os -ggdb
+#    OPTIMISATION   ?= -O0 -ggdb
 else
     OPTIMISATION   ?= -Os
 endif

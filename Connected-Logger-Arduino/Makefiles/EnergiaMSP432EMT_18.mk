@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -77,6 +77,7 @@ BOARDS_TXT      := $(HARDWARE_PATH)/boards.txt
 
 
 # Sketchbook/Libraries path
+# ----------------------------------
 # wildcard required for ~ management
 # ?ibraries required for libraries and Libraries
 #
@@ -173,6 +174,7 @@ msp432_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility
 msp432_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 msp432_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 msp432_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+msp432_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(msp432_10),$(wildcard $(dir)/*.cpp)) # */
 BUILD_APP_LIB_C_SRC   = $(foreach dir,$(msp432_10),$(wildcard $(dir)/*.c)) # */
@@ -187,7 +189,8 @@ APP_LIBS_LOCK = 1
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION   ?= -O0 -ggdb
+    OPTIMISATION   ?= -Os -ggdb
+#    OPTIMISATION   ?= -O0 -ggdb
 else
     OPTIMISATION   ?= -Os
 endif
@@ -276,7 +279,7 @@ ASFLAGS      = --asm_extension=S
 #
 LDFLAGS      = -mthumb -nostartfiles
 LDFLAGS     += -$(MCU_FLAG_NAME)=$(MCU) -DF_CPU=$(F_CPU)
-LDFLAGS     += -Wl,-T$(LDSCRIPT) $(CORE_A) $(addprefix -L, $(INCLUDE_LIBS))
+LDFLAGS     += -Wl,-T $(LDSCRIPT) $(CORE_A) $(addprefix -L, $(INCLUDE_LIBS))
 LDFLAGS     += $(OPTIMISATION) $(WARNING_FLAGS) $(addprefix -D, $(PLATFORM_TAG))
 #LDFLAGS     += @$(APPLICATION_PATH)/hardware/emt/ti/runtime/wiring/msp432/compiler.opt
 # -Wl,--check-sections

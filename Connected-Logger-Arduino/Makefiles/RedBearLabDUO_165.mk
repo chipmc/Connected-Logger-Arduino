@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,11 +17,11 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := RedBearLab
-PLATFORM_TAG      = ARDUINO=10610 EMBEDXCODE=$(RELEASE_NOW) REDBEARLAB_DUO
+PLATFORM_TAG      = ARDUINO=10801 EMBEDXCODE=$(RELEASE_NOW) REDBEARLAB_DUO
 APPLICATION_PATH := $(REDBEARLAB_DUO_PATH)
-PLATFORM_VERSION := Duo $(REDBEARLAB_DUO_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := Duo $(REDBEAR_DUO_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
-HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/STM32F2/$(REDBEARLAB_DUO_RELEASE)
+HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/STM32F2/$(REDBEAR_DUO_RELEASE)
 
 # Arduino IDE / RedBear Duo Conflict
 # ----------------------------------
@@ -40,9 +40,9 @@ HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/STM32F2/$(REDBEARLAB_DUO_RELEAS
 #   compiler.path={runtime.tools.arm-none-eabi-gcc-redbear-4.9-2015-q3.path}/bin/
 #
 ifneq ($(wildcard $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/*),) # */
-    TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/$(DUO_GCC_ARM_RELEASE)
+    TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/$(REDBEAR_DUO_GCC_ARM_RELEASE)
 else
-    TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc-redbear/$(DUO_GCC_ARM_RELEASE)
+    TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc-redbear/$(REDBEAR_DUO_GCC_ARM_RELEASE)
 endif
 OTHER_TOOLS_PATH  = $(APPLICATION_PATH)/tools/bossac/1.3a-arduino
 
@@ -54,7 +54,7 @@ BUILD_CORE       = $(call PARSE_BOARD,$(BOARD_TAG),build.core)
 #
 ifeq ($(UPLOADER),openocd)
     UPLOADER         = openocd
-    UPLOADER_PATH    = $(ARDUINO_SAMD_PATH)/tools/openocd/$(OPENOCD_RELEASE)
+    UPLOADER_PATH    = $(ARDUINO_SAMD_PATH)/tools/openocd/$(ARDUINO_OPENOCD_RELEASE)
     UPLOADER_EXEC    = $(UPLOADER_PATH)/bin/openocd
     UPLOADER_OPTS    = -d1 -s $(UPLOADER_PATH)/share/openocd/scripts/
     UPLOADER_OPTS   += -f $(VARIANT_PATH)/$(call PARSE_BOARD,$(BOARD_TAG),build.openocdscript)

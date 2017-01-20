@@ -3,12 +3,12 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Oct 28, 2016 release 5.3.6
+# Last update: Jan 16, 2017 release 6.0.8
 
 
 
@@ -53,35 +53,55 @@ else
         ifneq ($(MAKECMDGOALS),info)
         ifneq ($(MAKECMDGOALS),depends)
         ifneq ($(MAKECMDGOALS),style)
+
             ifeq ($(UPLOADER),DSLite)
                 $(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
+
+            else ifeq ($(UPLOADER),lightblue_loader_cli)
+            #    lightblue CLI uploader in charge
+                $(eval BOARD_FILE = $(shell grep -rl $(CURRENT_DIR)/Configurations -e '$(BOARD_TAG)$$'))
+                $(eval BEAN_NAME = $(shell grep ^BEAN_NAME '$(BOARD_FILE)' | cut -d= -f 2- | sed 's/^ //'))
+                ifeq ($(BEAN_NAME),)
+                    $(info .)
+                    $(info ---- Scanning for LightBlue boards ---)
+                    $(shell bean scan | grep Name | cut -d: -f2 > $(UTILITIES_PATH)/serial.txt)
+                    $(eval TEXT = $(shell cat '$(UTILITIES_PATH)/serial.txt'))
+                    $(info $(TEXT))
+                    $(info ---- LightBlue boards scanned ---)
+                else
+                    $(shell echo $(BEAN_NAME) > $(UTILITIES_PATH)/serial.txt)
+                endif
 
             else ifeq ($(UPLOADER),cp)
                 USED_VOLUME_PORT = $(shell ls -d $(BOARD_VOLUME))
                 ifeq ($(USED_VOLUME_PORT),)
                     $(error Volume not available)
                 endif
-                $(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
+                @$(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
 
             else ifeq ($(UPLOADER),stlink)
-                $(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
+                @$(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
 
             else ifeq ($(UPLOADER),spark_usb)
 #                        $(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
 # ~
+# To be commented for initial scan of serial port
+            else ifeq ($(UPLOADER),glowdeck_flash)
+            else ifeq ($(UPLOADER),glowdeck_bluetooth)
+
             else ifeq ($(UPLOADER),jlink)
 
             else ifeq ($(UPLOADER),spark_wifi)
 #                        $(shell ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt)
 # ~~
             else ifeq ($(BOARD_PORT),ssh)
-                $(shell echo 'ssh' > $(UTILITIES_PATH)/serial.txt)
+                @$(shell echo 'ssh' > $(UTILITIES_PATH)/serial.txt)
                 BACK_ADDRESS = $(shell ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d\ -f 2-)
 
             else ifeq ($(BOARD_PORT),pgm)
 
             else ifeq ($(UPLOADER),espota)
-                $(shell if [ -f $(BOARD_PORT) ] ; then ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt ; fi)
+                @$(shell if [ -f $(BOARD_PORT) ] ; then ls -1 $(BOARD_PORT) > $(UTILITIES_PATH)/serial.txt ; fi)
 
             else ifeq ($(AVRDUDE_PORT),)
                 $(error Serial port not available)
@@ -164,6 +184,18 @@ endif
 endif
 endif
 
+
+# Clean if new BOARD_TAG
+# ----------------------------------
+#
+NEW_TAG := $(strip $(OBJDIR)/$(BOARD_TAG).board) #
+OLD_TAG := $(strip $(wildcard $(OBJDIR)/*.board)) # */
+
+ifneq ($(OLD_TAG),$(NEW_TAG))
+    CHANGE_FLAG := 1
+else
+    CHANGE_FLAG := 0
+endif
 
 # CORE libraries
 # ----------------------------------
@@ -303,6 +335,7 @@ LOCAL_OBJ_FILES = $(LOCAL_C_SRCS:.c=.c.o) $(LOCAL_CPP_SRCS:.cpp=.cpp.o) $(LOCAL_
 LOCAL_OBJS      = $(patsubst $(LOCAL_LIB_PATH)/%,$(OBJDIR)/%,$(filter-out %/$(PROJECT_NAME_AS_IDENTIFIER).o,$(LOCAL_OBJ_FILES)))
 
 
+# ~
 # Local archives
 #
 LOCAL_ARCHIVES  = $(wildcard $(patsubst %,%/*.a,$(LOCAL_LIBS))) $(wildcard $(LOCAL_LIB_PATH)/*.a) # */
@@ -330,6 +363,7 @@ ifneq ($(MAKECMDGOALS),unarchive)
 endif
 endif
 endif
+# ~~
 
 # All the objects
 # ??? Does order matter?
@@ -469,7 +503,7 @@ ifeq ($(LDFLAGS),)
 endif
 
 ifndef OBJCOPYFLAGS
-    OBJCOPYFLAGS  = -Oihex -R .eeprom
+    OBJCOPYFLAGS  = -O ihex -R .eeprom
 endif
 
 # Implicit rules for building everything (needed to get everything in
@@ -481,10 +515,10 @@ endif
 # easy to change the build options in future
 
 
-# 1- Build
+# Build
 # ----------------------------------
 #
-# Following rules manages APP and BUILD_APP, CORE and VARIANT libraries
+# 1- APP and BUILD_APP, CORE and VARIANT libraries
 #
 $(OBJDIR)/%.cpp.o: $(APPLICATION_PATH)/%.cpp
 	$(call SHOW,"1.1-APPLICATION CPP",$@,$<)
@@ -531,10 +565,7 @@ $(OBJDIR)/%.d: $(APPLICATION_PATH)/%.s
 	$(QUIET)$(CC) -MM $(CPPFLAGS) $(ASFLAGS) $< -MF $@ -MT $(@:.d=.s.o)
 
 
-# 2- Build
-# ----------------------------------
-#
-# Following rules manages APP and BUILD_APP, CORE and VARIANT libraries
+# 2- APP and BUILD_APP, CORE and VARIANT libraries
 #
 $(OBJDIR)/%.cpp.o: $(HARDWARE_PATH)/%.cpp
 	$(call SHOW,"2.1-HARDWARE CPP",$@,$<)
@@ -580,6 +611,7 @@ $(OBJDIR)/%.d: $(HARDWARE_PATH)/%.s
 	@mkdir -p $(dir $@)
 	$(QUIET)$(CC) -MM $(CPPFLAGS) $(ASFLAGS) $< -MF $@ -MT $(@:.d=.s.o)
 
+
 # 3- USER library sources
 #
 $(OBJDIR)/user/%.cpp.o: $(USER_LIB_PATH)/%.cpp
@@ -607,7 +639,7 @@ $(OBJDIR)/user/%.d: $(USER_LIB_PATH)/%.c
 	$(QUIET)$(CC) -MM $(CPPFLAGS) $(CFLAGS) $< -MF $@ -MT $(@:.d=.c.o)
 
     
-# 4- LOCAL sources
+# 4- LOCAL library sources
 # .o rules are for objects, .d for dependency tracking
 # 
 $(OBJDIR)/%.c.o: %.c
@@ -729,7 +761,7 @@ endif
 $(OBJDIR)/%.hex: $(OBJDIR)/%.elf
 	$(call SHOW,"6.1-COPY HEX",$@,$<)
 
-	$(QUIET)$(OBJCOPY) -Oihex -R .eeprom $< $@
+	$(QUIET)$(OBJCOPY) -O ihex -R .eeprom $< $@
 # ~
 ifneq ($(SOFTDEVICE),)
 	$(call SHOW,"6.2-COPY HEX",$@,$<)
@@ -744,7 +776,7 @@ $(OBJDIR)/%.bin: $(OBJDIR)/%.elf
   ifneq ($(COMMAND_COPY),)
 	$(QUIET)$(COMMAND_COPY)
   else
-	$(QUIET)$(OBJCOPY) -Obinary $< $@
+	$(QUIET)$(OBJCOPY) -O binary $< $@
   endif
 
 $(OBJDIR)/%.bin2: $(OBJDIR)/%.elf
@@ -756,7 +788,7 @@ $(OBJDIR)/%.bin2: $(OBJDIR)/%.elf
 $(OBJDIR)/%.eep: $(OBJDIR)/%.elf
 	$(call SHOW,"6.5-COPY EEP",$@,$<)
 
-	-$(QUIET)$(OBJCOPY) -Oihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0 $< $@
+	-$(QUIET)$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0 $< $@
 
 $(OBJDIR)/%.lss: $(OBJDIR)/%.elf
 	$(call SHOW,"6.6-COPY LSS",$@,$<)
@@ -846,6 +878,9 @@ endif
 ifeq ($(MAX_RAM_SIZE),)
     MAX_RAM_SIZE = $(call PARSE_BOARD,$(BOARD_TAG),upload.maximum_ram_size)
 endif
+ifeq ($(MAX_RAM_SIZE),)
+    MAX_RAM_SIZE = $(call PARSE_BOARD,$(BOARD_TAG),upload.ram.maximum_size)
+endif
 
 ifneq ($(MAX_FLASH_SIZE),)
 #     MAX_FLASH_BYTES   = 'bytes (of a '$(MAX_FLASH_SIZE)' byte maximum)'
@@ -880,8 +915,8 @@ ifndef SERIAL_BAUDRATE
     SERIAL_BAUDRATE = 9600
 endif
 
-ifndef SERIAL_COMMAND
-    SERIAL_COMMAND  = screen
+ifndef SERIAL_EXEC
+    SERIAL_EXEC  = screen
 endif
 
 STARTCHRONO      = $(shell $(UTILITIES_PATH)/embedXcode_chrono)
@@ -924,7 +959,7 @@ endif
 #
 info:
 #		@if [ -f $(CURRENT_DIR)/About/About.txt ]; then $(CAT) $(CURRENT_DIR)/About/About.txt | head -6; fi;
-		@if [ -f $(UTILITIES_PATH)/embedXcode_check ]; then $(UTILITIES_PATH)/embedXcode_check; fi
+		@if [ -f $(UTILITIES_PATH)/embedXcode_check ]; then export UPLOADER=$(UPLOADER) ; $(UTILITIES_PATH)/embedXcode_check; fi
 		@echo $(STARTCHRONO)
 ifeq ($(UNKNOWN_BOARD),1)
 		@echo .
@@ -1059,6 +1094,7 @@ endif
 			@echo 0
         endif
     endif
+# ~
     ifneq ($(trim $(LOCAL_ARCHIVES)),)
 		@echo . Local archives from $(CURRENT_DIR)
 #        ifneq ($(wildcard $(LOCAL_LIB_PATH)/*.a),) # */
@@ -1068,6 +1104,7 @@ endif
 #			@echo '$(LOCAL_LIBS_LIST) ' | sed 's/\/ / /g'
 #        endif
     endif
+# ~~
 		@echo ---- Tools ----
 		@defaults read /System/Library/PrivateFrameworks/ServerInformation.framework/Versions/A/Resources/English.lproj/SIMachineAttributes.plist $$(sysctl hw.model | cut -d: -f2) | grep marketingModel | cut -d\" -f2-3 | sed 's/\\//g'
 		@echo $$(sw_vers -productName) $$(sw_vers -productVersion)' ('$$(sw_vers -buildVersion)')'
@@ -1143,7 +1180,8 @@ compile:	info message_compile $(OBJDIR) $(TARGET_HEXBIN) $(TARGET_EEP) size
 
 
 prepare:
-		@if [ -f $(UTILITIES_PATH)/embedXcode_prepare ]; then echo "." ; $(UTILITIES_PATH)/embedXcode_prepare $(SCOPE_FLAG) "$(USER_LIB_PATH)"; rm -r $(UTILITIES_PATH)/embedXcode_prepare; fi;
+#		@if [ -f $(UTILITIES_PATH)/embedXcode_prepare ]; then echo "." ; $(UTILITIES_PATH)/embedXcode_prepare $(SCOPE_FLAG) "$(USER_LIB_PATH)"; rm -r $(UTILITIES_PATH)/embedXcode_prepare; fi;
+		@if [ -f $(UTILITIES_PATH)/embedXcode_prepare ]; then echo "." ; $(UTILITIES_PATH)/embedXcode_prepare $(SCOPE_FLAG) "$(USER_LIB_PATH)"; fi;
 
 
 $(OBJDIR):
@@ -1164,6 +1202,9 @@ reset:
 		@echo "---- Reset ---- "
 # ~
 ifeq ($(BOARD_PORT),pgm)
+
+else ifeq ($(UPLOADER),lightblue_loader_cli)
+		-if [[ $$(ps aux | grep bin/bean) == *node* ]] ; then killall node ; fi
 
 else ifeq ($(BOARD_PORT),ssh)
 		-killall ssh
@@ -1213,7 +1254,7 @@ raw_upload:
 		@echo "---- Upload ---- "
 
 ifeq ($(RESET_MESSAGE),1)
-		$(call SHOW,"10.0-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.1-UPLOAD",$(UPLOADER))
 
 		@osascript -e 'tell application "System Events" to display dialog "Press the RESET button on the board $(BOARD_NAME) and then click OK." buttons {"OK"} default button {"OK"} with icon POSIX file ("$(UTILITIES_PATH_SPACE)/TemplateIcon.icns") with title "embedXcode"'
 # Give Mac OS X enough time for enumerating the USB ports
@@ -1224,20 +1265,38 @@ ifneq ($(COMMAND_PREPARE),)
 		$(call SHOW,"10.80-PREPARE",$(UPLOADER))
 
 		$(QUIET)$(COMMAND_PREPARE)
+		$(COMMAND_PREPARE)
 endif
 
-ifneq ($(COMMAND_UPLOAD),)
+ifeq ($(UPLOADER),lightblue_loader_cli)
+		$(call SHOW,"10.2-UPLOAD",$(UPLOADER))
+        ifeq ($(BEAN_NAME),)
+			$(eval BEAN_NAME = $(shell grep ^BEAN_NAME '$(BOARD_FILE)' | cut -d= -f 2- | sed 's/^ //'))
+        endif
+		$(QUIET)$(COMMAND_UPLOAD)
+
+else ifneq ($(COMMAND_UPLOAD),)
 		$(call SHOW,"10.90-UPLOAD",$(UPLOADER))
 
+    ifneq ($(DELAY_BEFORE_UPLOAD),)
+		$(QUIET)sleep $(DELAY_BEFORE_UPLOAD)
+    endif
+
 		$(QUIET)$(COMMAND_UPLOAD)
+
+    ifneq ($(DELAY_AFTER_UPLOAD),)
+		$(QUIET)sleep $(DELAY_AFTER_UPLOAD)
+    endif
+
 # ~
 else ifeq ($(BOARD_PORT),pgm)
-		$(call SHOW,"10.1-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.3-UPLOAD",$(UPLOADER))
 
 		@if [ -f $(UTILITIES_PATH)/embedXcode_debug ]; then export STECK_EXTENSION=$(STECK_EXTENSION); $(UTILITIES_PATH)/embedXcode_debug; fi;
 		@osascript -e 'tell application "Terminal" to do script "$(MDB) \"$(UTILITIES_PATH_SPACE)/mdb.txt\""'
 
 else ifeq ($(BOARD_PORT),ssh)
+	$(call SHOW,"10.4-UPLOAD",$(UPLOADER))
 
 #	$(eval BOARD_FILE = $(shell grep -rl $(CURRENT_DIR)/Configurations -e '$(BOARD_TAG) \| ssh'))
 	$(eval BOARD_FILE = $(shell grep -rl $(CURRENT_DIR)/Configurations -e '$(BOARD_TAG)_ssh'))
@@ -1261,7 +1320,7 @@ else ifeq ($(BOARD_PORT),ssh)
     endif
 
     ifneq ($(filter $(BOARD_TAG),yun tian),)
-		$(call SHOW,"10.2-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.5-UPLOAD",$(UPLOADER))
 
 		@echo "Uploading 1/3"
 		@$(UTILITIES_PATH)/sshpass -p '$(SSH_PASSWORD)' scp $(TARGET_HEX) root@$(SSH_ADDRESS):"/tmp/sketch.hex"
@@ -1282,14 +1341,14 @@ else ifeq ($(BOARD_PORT),ssh)
       endif
 
     else ifeq ($(BOARD_TAG),izmir_ec)
-		$(call SHOW,"10.3-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.6-UPLOAD",$(UPLOADER))
 
 		osascript -e 'tell application "Terminal" to do script "cd $(CURRENT_DIR); $(UTILITIES_PATH)/uploader_ssh.sh $(SSH_ADDRESS) $(SSH_PASSWORD) $(REMOTE_FOLDER) $(TARGET) -exec"'
 
     else ifeq ($(BOARD_TAG),izmir_ec_yocto)
       ifneq ($(MAKECMDGOALS),debug)
 
-		$(call SHOW,"10.21-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.7-UPLOAD",$(UPLOADER))
 
 		osascript -e 'tell application "Terminal" to do script "cd $(CURRENT_DIR); $(UTILITIES_PATH)/uploader_ssh.sh $(SSH_ADDRESS) $(SSH_PASSWORD) $(REMOTE_FOLDER) $(TARGET) -exec"'
       endif
@@ -1298,8 +1357,7 @@ else ifeq ($(BOARD_PORT),ssh)
     else ifeq ($(BOARD_TAG),BeagleBoneDebian)
       ifneq ($(MAKECMDGOALS),debug)
 
-		$(call SHOW,"10.22-UPLOAD",$(UPLOADER))
-
+		$(call SHOW,"10.8-UPLOAD",$(UPLOADER))
 
 		osascript -e 'tell application "Terminal" to do script "cd $(CURRENT_DIR); $(UTILITIES_PATH)/uploader_ssh.sh $(SSH_ADDRESS) $(SSH_PASSWORD) $(REMOTE_FOLDER) $(TARGET) -exec"'
       endif
@@ -1324,29 +1382,29 @@ else ifeq ($(BOARD_PORT),ssh)
     endif
 # ~~
 else ifeq ($(UPLOADER),izmir_tty)
-		$(call SHOW,"10.4-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.9-UPLOAD",$(UPLOADER))
 
 		bash $(UPLOADER_EXEC) $(UPLOADER_OPTS) $(TARGET_ELF) $(USED_SERIAL_PORT)
 
 else ifeq ($(UPLOADER),micronucleus)
-		$(call SHOW,"10.5-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.10-UPLOAD",$(UPLOADER))
 
 		osascript -e 'tell application "System Events" to display dialog "Click OK and plug the Digispark board into the USB port." buttons {"OK"} with icon POSIX file ("$(UTILITIES_PATH)/TemplateIcon.icns") with title "embedXcode"'
 
 		$(AVRDUDE_EXEC) $(AVRDUDE_COM_OPTS) $(AVRDUDE_OPTS) -P$(USED_SERIAL_PORT) -Uflash:w:$(TARGET_HEX):i
 
 else ifeq ($(PLATFORM),RedBearLab)
-		$(call SHOW,"10.6-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.11-UPLOAD",$(UPLOADER))
 		sleep 2
 
-		$(QUIET)$(OBJCOPY) -Oihex -Ibinary $(TARGET_BIN) $(TARGET_HEX)
+		$(QUIET)$(OBJCOPY) -O ihex -I binary $(TARGET_BIN) $(TARGET_HEX)
 		$(AVRDUDE_EXEC) $(AVRDUDE_COM_OPTS) $(AVRDUDE_OPTS) -P$(USED_SERIAL_PORT) -Uflash:w:$(TARGET_HEX):i
 		sleep 2
 
 else ifeq ($(UPLOADER),avrdude)
 
   ifeq ($(AVRDUDE_SPECIAL),1)
-		$(call SHOW,"10.7-UPLOAD",$(UPLOADER) $(AVRDUDE_PROGRAMMER))
+		$(call SHOW,"10.12-UPLOAD",$(UPLOADER) $(AVRDUDE_PROGRAMMER))
 
         ifeq ($(AVR_FUSES),1)
             $(AVRDUDE_EXEC) -p$(AVRDUDE_MCU) -C$(AVRDUDE_CONF) -c$(AVRDUDE_PROGRAMMER) -e -U lock:w:$(ISP_LOCK_FUSE_PRE):m -U hfuse:w:$(ISP_HIGH_FUSE):m -U lfuse:w:$(ISP_LOW_FUSE):m -U efuse:w:$(ISP_EXT_FUSE):m
@@ -1357,7 +1415,7 @@ else ifeq ($(UPLOADER),avrdude)
         endif
 
   else
-		$(call SHOW,"10.8-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.13-UPLOAD",$(UPLOADER))
 
         ifeq ($(USED_SERIAL_PORT),)
 			$(AVRDUDE_EXEC) $(AVRDUDE_COM_OPTS) $(AVRDUDE_OPTS) -Uflash:w:$(TARGET_HEX):i
@@ -1371,19 +1429,19 @@ else ifeq ($(UPLOADER),avrdude)
   endif
 
 else ifeq ($(UPLOADER),bossac)
-		$(call SHOW,"10.9-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.14-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) $(UPLOADER_OPTS) $(TARGET_BIN) -R
 
 else ifeq ($(UPLOADER),openocd)
     ifneq ($(MAKECMDGOALS),debug)
-		$(call SHOW,"10.10-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.15-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) $(UPLOADER_OPTS) -c "program $(TARGET_BIN) $(UPLOADER_COMMAND)"
     endif
 
 else ifeq ($(UPLOADER),mspdebug)
-		$(call SHOW,"10.10-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.16-UPLOAD",$(UPLOADER))
 
   ifeq ($(UPLOADER_PROTOCOL),tilib)
 		cd $(UPLOADER_PATH); ./mspdebug $(UPLOADER_OPTS) "$(UPLOADER_COMMAND) $(CURRENT_DIR_SPACE)/$(TARGET_HEX)";
@@ -1396,7 +1454,7 @@ else ifeq ($(UPLOADER),lm4flash)
 # ~
     ifneq ($(MAKECMDGOALS),debug)
 # ~~
-		$(call SHOW,"10.11-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.17-UPLOAD",$(UPLOADER))
 
 		-killall openocd
 		$(UPLOADER_EXEC) $(UPLOADER_OPTS) $(TARGET_BIN)
@@ -1408,7 +1466,7 @@ else ifeq ($(UPLOADER),cc3200serial)
 # ~
     ifneq ($(MAKECMDGOALS),debug)
 # ~~
-		$(call SHOW,"10.12-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.18-UPLOAD",$(UPLOADER))
 
 		-killall openocd
 #		@cp -r $(APP_TOOLS_PATH)/dll ./dll
@@ -1420,7 +1478,7 @@ else ifeq ($(UPLOADER),cc3200serial)
 
 else ifeq ($(UPLOADER),DSLite)
 #    ifneq ($(MAKECMDGOALS),debug)
-		$(call SHOW,"10.28-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.19-UPLOAD",$(UPLOADER))
 
 #		-killall openocd
 		$(UPLOADER_EXEC) $(UPLOADER_OPTS) $(TARGET_ELF)
@@ -1428,38 +1486,38 @@ else ifeq ($(UPLOADER),DSLite)
 #    endif
 
 else ifeq ($(UPLOADER),serial_loader2000)
-		$(call SHOW,"10.13-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.20-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) -f $(TARGET_TXT) $(UPLOADER_OPTS) -p $(USED_SERIAL_PORT)
 
 else ifeq ($(UPLOADER),dfu-util)
-		$(call SHOW,"10.14-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.21-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) $(UPLOADER_OPTS) -D $(TARGET_BIN) -R
 		sleep 4
 
 else ifeq ($(UPLOADER),teensy_flash)
-		$(call SHOW,"10.15-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.22-UPLOAD",$(UPLOADER))
 
-		$(TEENSY_POST_COMPILE) -file=$(basename $(notdir $(TARGET_HEX))) -path="$(CURRENT_DIR_SPACE)/Builds" -tools=$(abspath $(TEENSY_FLASH_PATH)) -board=$(call PARSE_BOARD,$(BOARD_TAG),build.board)
+		$(TEENSY_POST_COMPILE) -file=$(basename $(notdir $(TARGET_HEX))) -path="$(CURRENT_DIR_SPACE)/Builds" -tools=$(abspath $(TEENSY_FLASH_PATH)) -board=$(call PARSE_BOARD,$(BOARD_TAG),build.board) -reboot
 		sleep 2
 		$(TEENSY_REBOOT)
 		sleep 2
 
 else ifeq ($(UPLOADER),lightblue_loader)
-		$(call SHOW,"10.16-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.23-UPLOAD",$(UPLOADER))
 
 		$(LIGHTBLUE_POST_COMPILE) -board="$(BOARD_TAG)" -tools="$(abspath $(LIGHTBLUE_FLASH_PATH))" -path="$(dir $(abspath $(TARGET_HEX)))" -file="$(basename $(notdir $(TARGET_HEX)))"
 		sleep 2
 
 else ifeq ($(UPLOADER),izmirdl)
-		$(call SHOW,"10.17-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.24-UPLOAD",$(UPLOADER))
 
 		bash $(UPLOADER_EXEC) $(UPLOADER_OPTS) $(TARGET_ELF) $(USED_SERIAL_PORT)
 #		osascript -e 'tell application "Terminal" to do script "cd $(CURRENT_DIR) ; $(UPLOADER_EXEC) $(UPLOADER_OPTS) $(TARGET_ELF) $(USED_SERIAL_PORT)"'
 
 else ifeq ($(UPLOADER),spark_usb)
-		$(call SHOW,"10.18-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.25-UPLOAD",$(UPLOADER))
 
 		$(eval SPARK_NAME = $(shell $(UPLOADER_EXEC) -l | grep 'serial' | cut -d\= -f8 | sed 's/\"//g' | head -1))
 
@@ -1472,7 +1530,7 @@ else ifeq ($(UPLOADER),spark_usb)
 # ~
 else ifeq ($(UPLOADER),jlink)
     ifneq ($(MAKECMDGOALS),debug)
-		$(call SHOW,"10.31-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.26-UPLOAD",$(UPLOADER))
 
         ifneq ($(COMMAND_PREPARE),)
 			@$(COMMAND_PREPARE)
@@ -1489,7 +1547,7 @@ else ifeq ($(UPLOADER),jlink)
 
 
 else ifeq ($(UPLOADER),spark_wifi)
-	$(call SHOW,"10.19-UPLOAD",$(UPLOADER))
+	$(call SHOW,"10.27-UPLOAD",$(UPLOADER))
     ifeq ($(SPARK_NAME),)
 		$(eval SPARK_NAME = $(shell $(UPLOADER_EXEC) list | tr '\[' '\n' | grep 'online' | cut -d\] -f1 ))
     endif
@@ -1502,17 +1560,17 @@ else ifeq ($(UPLOADER),spark_wifi)
 		sleep 60
 
 else ifeq ($(UPLOADER),robotis-loader)
-		$(call SHOW,"10.20-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.28-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) $(USED_SERIAL_PORT) $(TARGET_BIN)
 
 else ifeq ($(UPLOADER),RFDLoader)
-		$(call SHOW,"10.21-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.29-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) -q $(USED_SERIAL_PORT) $(TARGET_HEX)
 
 else ifeq ($(UPLOADER),PushTool)
-		$(call SHOW,"10.22-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.30-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_EXEC) $(UPLOADER_OPTS) -b $(USED_SERIAL_PORT) -p $(TARGET_VXP)
 
@@ -1522,7 +1580,7 @@ else ifeq ($(UPLOADER),cp)
 # ~
     ifneq ($(MAKECMDGOALS),debug)
 # ~~
-		$(call SHOW,"10.23-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.31-UPLOAD",$(UPLOADER))
 
 # Option 1
 #		if [ -f $(USED_VOLUME_PORT)/*.bin ] ; then rm $(USED_VOLUME_PORT)/*.bin ; fi ; # */
@@ -1541,7 +1599,7 @@ else ifeq ($(UPLOADER),stlink)
 # ~
     ifneq ($(MAKECMDGOALS),debug)
 # ~~
-		$(call SHOW,"10.29-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.32-UPLOAD",$(UPLOADER))
 
 		$(UPLOADER_PATH)/$(UPLOADER_EXEC) write $(CURRENT_DIR)/$(TARGET_BIN) $(UPLOADER_OPTS)
 # ~
@@ -1549,19 +1607,19 @@ else ifeq ($(UPLOADER),stlink)
 # ~~
 
 else ifeq ($(UPLOADER),BsLoader.jar)
-	$(call SHOW,"10.24-UPLOAD",$(UPLOADER))
+	$(call SHOW,"10.33-UPLOAD",$(UPLOADER))
 
 #	echo 'USED_SERIAL_PORT = '$(USED_SERIAL_PORT)
 	$(UPLOADER_EXEC) $(TARGET_HEX) $(USED_SERIAL_PORT) $(UPLOADER_OPTS)
 
 else ifeq ($(UPLOADER),esptool)
-	$(call SHOW,"10.25-UPLOAD",$(UPLOADER))
+	$(call SHOW,"10.34-UPLOAD",$(UPLOADER))
 
 #	echo 'USED_SERIAL_PORT = '$(USED_SERIAL_PORT)
 	$(UPLOADER_EXEC) $(UPLOADER_OPTS) -cp $(USED_SERIAL_PORT) -ca 0x$(ADDRESS_BIN1) -cf Builds/$(TARGET)_$(ADDRESS_BIN1).bin
 
 else ifeq ($(UPLOADER),esptool.py)
-	$(call SHOW,"10.26-UPLOAD",$(UPLOADER))
+	$(call SHOW,"10.35-UPLOAD",$(UPLOADER))
 
 #	echo 'USED_SERIAL_PORT = '$(USED_SERIAL_PORT)
 	$(UPLOADER_EXEC) $(UPLOADER_OPTS) --port $(USED_SERIAL_PORT) write_flash 0x00000 Builds/$(TARGET)_00000.bin 0x$(ADDRESS_BIN2) Builds/$(TARGET)_$(ADDRESS_BIN2).bin
@@ -1570,7 +1628,7 @@ else
 endif
 
 ifeq ($(POST_RESET_MESSAGE),1)
-		$(call SHOW,"10.30-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.36-UPLOAD",$(UPLOADER))
 
 		@osascript -e 'tell application "System Events" to display dialog "Press the RESET button on the board $(BOARD_NAME) and then click OK." buttons {"OK"} default button {"OK"} with icon POSIX file ("$(UTILITIES_PATH)/TemplateIcon.icns") with title "embedXcode"'
 # Give Mac OS X enough time for enumerating the USB ports
@@ -1580,7 +1638,7 @@ endif
 ispload:	$(TARGET_HEX)
 		@echo "---- ISP upload ---- "
 ifeq ($(UPLOADER),avrdude)
-		$(call SHOW,"10.15-UPLOAD",$(UPLOADER))
+		$(call SHOW,"10.37-UPLOAD",$(UPLOADER))
 
 		$(AVRDUDE_EXEC) $(AVRDUDE_COM_OPTS) $(AVRDUDE_ISP_OPTS) -e \
 			-U lock:w:$(ISP_LOCK_FUSE_PRE):m \
@@ -1594,67 +1652,52 @@ ifeq ($(UPLOADER),avrdude)
 endif
 
 
-# ~
-serial_option:		reset
-ifneq ($(DELAY_PRE_SERIAL),)
-	@sleep $(DELAY_PRE_SERIAL)
-endif
+serial:		reset
+	@echo "---- Serial ---- "
 
 ifneq ($(NO_SERIAL_CONSOLE),1)
-    ifeq ($(BOARD_PORT),ssh)
-      ifeq ($(BOARD_TAG),yun)
-		$(call SHOW,"11.1-SERIAL",$(UPLOADER))
+    ifneq ($(DELAY_PRE_SERIAL),)
+		@sleep $(DELAY_PRE_SERIAL)
+    endif
 
-		osascript -e 'tell application "Terminal" to do script "$(UTILITIES_PATH_SPACE)/sshpass -p $(SSH_PASSWORD) ssh root@$(SSH_ADDRESS) exec telnet localhost 6571"'
-      endif
+    ifneq ($(COMMAND_SERIAL),)
+		$(call SHOW,"11.90-SERIAL",$(UPLOADER))
+		osascript -e 'tell application "Terminal" to do script "$(COMMAND_SERIAL)"' -e 'tell application "Terminal" to activate'
+
+    else ifeq ($(BOARD_PORT),ssh)
+        ifeq ($(BOARD_TAG),yun)
+			$(call SHOW,"11.1-SERIAL",$(UPLOADER))
+			osascript -e 'tell application "Terminal" to do script "$(UTILITIES_PATH_SPACE)/sshpass -p $(SSH_PASSWORD) ssh root@$(SSH_ADDRESS) exec telnet localhost 6571"' -e 'tell application "Terminal" to activate'
+        endif
+
     else ifeq ($(AVRDUDE_NO_SERIAL_PORT),1)
 		@echo "The programmer provides no serial port"
 
+# ~
+    else ifeq ($(UPLOADER),glowdeck_flash)
+#		$(call SHOW,"11.8-SERIAL",$(UPLOADER))
+# ~~
+
     else ifeq ($(UPLOADER),teensy_flash)
 		$(call SHOW,"11.2-SERIAL",$(UPLOADER))
+		osascript -e 'tell application "Terminal" to do script "$(SERIAL_EXEC) $$(ls $(BOARD_PORT)) $(SERIAL_BAUDRATE)"' -e 'tell application "Terminal" to activate'
 
-		osascript -e 'tell application "Terminal" to do script "$(SERIAL_COMMAND) $$(ls $(BOARD_PORT)) $(SERIAL_BAUDRATE)"'
+# ~
+    else ifeq ($(UPLOADER),lightblue_loader_cli)
+		$(call SHOW,"11.71-SERIAL",$(UPLOADER))
+		osascript -e 'tell application "Terminal" to do script "$(SERIAL_EXEC)"' -e 'tell application "Terminal" to activate'
+# ~~
 
     else ifeq ($(UPLOADER),lightblue_loader)
 		$(call SHOW,"11.3-SERIAL",$(UPLOADER))
-
-		osascript -e 'tell application "Terminal" to do script "$(SERIAL_COMMAND) $$(ls $(BOARD_PORT)) $(SERIAL_BAUDRATE)"'
+		osascript -e 'tell application "Terminal" to do script "$(SERIAL_EXEC) $$(ls $(BOARD_PORT)) $(SERIAL_BAUDRATE)"' -e 'tell application "Terminal" to activate'
 
     else ifneq ($(USED_SERIAL_PORT),)
 		$(call SHOW,"11.4-SERIAL",$(UPLOADER))
-
-		osascript -e 'tell application "Terminal" to do script "$(SERIAL_COMMAND) $(USED_SERIAL_PORT) $(SERIAL_BAUDRATE)"' -e 'tell application "Terminal" to activate'
+		osascript -e 'tell application "Terminal" to do script "$(SERIAL_EXEC) $(USED_SERIAL_PORT) $(SERIAL_BAUDRATE)"' -e 'tell application "Terminal" to activate'
     else
 		@echo "No serial port available"
     endif
-endif
-# ~~
-
-
-serial:		reset
-		@echo "---- Serial ---- "
-# ~
-ifeq ($(BOARD_PORT),ssh)
-    ifeq ($(BOARD_TAG),yun)
-		$(call SHOW,"11.5-SERIAL",$(UPLOADER))
-		osascript -e 'tell application "Terminal" to do script "$(UTILITIES_PATH_SPACE)/sshpass -p $(SSH_PASSWORD) ssh root@$(SSH_ADDRESS) exec telnet localhost 6571"'
-    endif
-# ~~
-
-else ifeq ($(AVRDUDE_NO_SERIAL_PORT),1)
-		@echo "The programmer provides no serial port"
-
-else ifeq ($(UPLOADER),teensy_flash)
-		$(call SHOW,"11.6-SERIAL",$(UPLOADER))
-		osascript -e 'tell application "Terminal" to do script "$(SERIAL_COMMAND) $$(ls $(BOARD_PORT)) $(SERIAL_BAUDRATE)"'
-
-else ifeq ($(UPLOADER),lightblue_loader)
-		$(call SHOW,"11.7-SERIAL",$(UPLOADER))
-		osascript -e 'tell application "Terminal" to do script "$(SERIAL_COMMAND) $$(ls $(BOARD_PORT)) $(SERIAL_BAUDRATE)"'
-
-else
-		$(call SHOW,"11.8-SERIAL",$(UPLOADER))
-		osascript -e 'tell application "Terminal" to do script "$(SERIAL_COMMAND) $(USED_SERIAL_PORT) $(SERIAL_BAUDRATE)"'  -e 'tell application "Terminal" to activate'
 endif
 
 
@@ -1757,7 +1800,7 @@ end_build:
 		@echo "==== Build done ==== "
 
 # ~
-fast: 		info message_fast changed compile reset raw_upload serial_option end_fast prepare
+fast: 		info message_fast changed compile reset raw_upload serial end_fast prepare
 
 make:		info message_make changed compile end_make prepare
 
@@ -1779,6 +1822,6 @@ end_fast:
 # ~~
 
 # cat Step2.mk | grep -e "^[A-z]\+:" | cut -d: -f1
-.PHONY:	all boards build changed clean compile depends end_all end_build end_fast end_make fast info ispload make message_all message_build message_compile message_fast message_make message_upload prepare raw_upload reset serial serial_option size upload archive do_archive unarchive
+.PHONY:	all boards build changed clean compile depends end_all end_build end_fast end_make fast info ispload make message_all message_build message_compile message_fast message_make message_upload prepare raw_upload reset serial size upload archive do_archive unarchive
 
 

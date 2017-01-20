@@ -3,12 +3,12 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Sep 29, 2016 release 5.2.9
+# Last update: Nov 16, 2016 release 5.3.7
 
 
 
@@ -40,15 +40,15 @@
 
 PLATFORM         := Arduino
 BUILD_CORE       := avr
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW) ARDUINO_$(BOARD_NAME) $(filter __%__ ,$(GCC_PREPROCESSOR_DEFINITIONS))
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW) ARDUINO_$(BOARD_NAME) $(filter __%__ ,$(GCC_PREPROCESSOR_DEFINITIONS))
 APPLICATION_PATH := $(ARDUINO_PATH)
-PLATFORM_VERSION := AVR $(ARDUINO_AVR_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := AVR $(ARDUINO_AVR_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(ARDUINO_AVR_PATH)/hardware/avr/$(ARDUINO_AVR_RELEASE)
 
 # With ArduinoCC 1.6.6, AVR 1.6.9 used to be under ~/Library
-TOOL_CHAIN_PATH   = $(ARDUINO_AVR_PATH)/tools/avr-gcc/$(AVR_GCC_RELEASE)
-OTHER_TOOLS_PATH  = $(ARDUINO_AVR_PATH)/tools/avrdude/$(AVRDUDE_RELEASE)
+TOOL_CHAIN_PATH   = $(ARDUINO_AVR_PATH)/tools/avr-gcc/$(ARDUINO_AVR_GCC_RELEASE)
+OTHER_TOOLS_PATH  = $(ARDUINO_AVR_PATH)/tools/avrdude/$(ARDUINO_AVRDUDE_RELEASE)
 
 # With ArduinoCC 1.6.7, AVR 1.6.9 is back under Arduino.app
 ifeq ($(wildcard $(TOOL_CHAIN_PATH)),)
@@ -153,8 +153,7 @@ endif
 
 # Two locations for Arduino libraries
 #
-APP_LIB_PATH     = $(APPLICATION_PATH)/libraries
-APP_LIB_PATH    += $(HARDWARE_PATH)/libraries
+APP_LIB_PATH    = $(HARDWARE_PATH)/libraries
 
 avr166_20    = $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%,$(APP_LIBS_LIST)))
 avr166_20   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(APP_LIBS_LIST)))
@@ -171,13 +170,28 @@ APP_LIB_OBJS     = $(patsubst $(HARDWARE_PATH)/%.cpp,$(OBJDIR)/%.cpp.o,$(APP_LIB
 APP_LIB_OBJS    += $(patsubst $(HARDWARE_PATH)/%.c,$(OBJDIR)/%.c.o,$(APP_LIB_C_SRC))
 
 #BUILD_APP_LIBS_LIST = $(subst $(BUILD_APP_LIB_PATH)/, ,$(APP_LIB_CPP_SRC))
+BUILD_APP_LIB_PATH     = $(APPLICATION_PATH)/libraries
+
+avr166_30    = $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%,$(APP_LIBS_LIST)))
+avr166_30   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(APP_LIBS_LIST)))
+avr166_30   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
+avr166_30   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
+avr166_30   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+avr166_30   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
+
+BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(avr166_30),$(wildcard $(dir)/*.cpp)) # */
+BUILD_APP_LIB_C_SRC   = $(foreach dir,$(avr166_30),$(wildcard $(dir)/*.c)) # */
+BUILD_APP_LIB_H_SRC   = $(foreach dir,$(avr166_30),$(wildcard $(dir)/*.h)) # */
+
+BUILD_APP_LIB_OBJS     = $(patsubst $(APPLICATION_PATH)/%.cpp,$(OBJDIR)/%.cpp.o,$(BUILD_APP_LIB_CPP_SRC))
+BUILD_APP_LIB_OBJS    += $(patsubst $(APPLICATION_PATH)/%.c,$(OBJDIR)/%.c.o,$(BUILD_APP_LIB_C_SRC))
 
 APP_LIBS_LOCK = 1
 
 CORE_C_SRCS     = $(wildcard $(CORE_LIB_PATH)/*.c $(CORE_LIB_PATH)/*/*.c) # */
 
-avr166_30              = $(filter-out %main.cpp, $(wildcard $(CORE_LIB_PATH)/*.cpp $(CORE_LIB_PATH)/*/*.cpp $(CORE_LIB_PATH)/*/*/*.cpp $(CORE_LIB_PATH)/*/*/*/*.cpp)) # */
-CORE_CPP_SRCS     = $(filter-out %/$(EXCLUDE_LIST),$(avr166_30))
+avr166_40              = $(filter-out %main.cpp, $(wildcard $(CORE_LIB_PATH)/*.cpp $(CORE_LIB_PATH)/*/*.cpp $(CORE_LIB_PATH)/*/*/*.cpp $(CORE_LIB_PATH)/*/*/*/*.cpp)) # */
+CORE_CPP_SRCS     = $(filter-out %/$(EXCLUDE_LIST),$(avr166_40))
 CORE_AS1_SRCS        = $(shell find $(CORE_LIB_PATH) -name \*.S)
 CORE_AS1_SRCS_OBJ = $(patsubst %.S,%.S.o,$(filter %S, $(CORE_AS1_SRCS)))
 CORE_AS2_SRCS        = $(shell find $(CORE_LIB_PATH) -name \*.s)
@@ -218,7 +232,7 @@ endif
 INCLUDE_PATH    = $(CORE_LIB_PATH) $(APP_LIB_PATH) $(VARIANT_PATH)
 INCLUDE_PATH   += $(sort $(dir $(APP_LIB_CPP_SRC) $(APP_LIB_C_SRC) $(APP_LIB_H_SRC)))
 #INCLUDE_PATH   += $(sort $(dir $(APP_LIB_H_SRC)))
-INCLUDE_PATH   += $(sort $(dir $(BUILD_APP_LIB_CPP_SRC) $(BUILD_APP_LIB_C_SRC)))
+INCLUDE_PATH   += $(sort $(dir $(BUILD_APP_LIB_CPP_SRC) $(BUILD_APP_LIB_C_SRC) $(BUILD_APP_LIB_H_SRC)))
 
 FIRST_O_IN_A     = $$(find . -name wiring_pulse.S.o)
 

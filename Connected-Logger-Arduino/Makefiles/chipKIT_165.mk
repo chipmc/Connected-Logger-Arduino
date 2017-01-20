@@ -3,12 +3,12 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Oct 17, 2016 release 5.3.4
+# Last update: Jan 07, 2017 release 6.0.3
 
 
 
@@ -23,7 +23,7 @@ PLATFORM_VERSION := $(CHIPKIT_RELEASE) for Arduino 1.6.12
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/pic32/$(CHIPKIT_RELEASE)
 #mp001             = $(shell cat $(APPLICATION_PATH)/lib/version.txt | cut -d- -f1 | sed 's/^0*//')
-PLATFORM_TAG      = ARDUINO=10612 MPIDE=$(CHIPKIT_RELEASE) IDE=Arduino MPIDEVER=16777998 EMBEDXCODE=$(RELEASE_NOW) ARDUINO_ARCH_PIC32
+PLATFORM_TAG      = ARDUINO=10801 MPIDE=$(CHIPKIT_RELEASE) IDE=Arduino MPIDEVER=16777998 EMBEDXCODE=$(RELEASE_NOW) ARDUINO_ARCH_PIC32
 
 TOOL_CHAIN_PATH   = $(CHIPKIT_PATH)/tools/pic32-tools/$(PIC32_GCC_RELEASE)
 OTHER_TOOLS_PATH  = $(CHIPKIT_PATH)/tools/pic32prog/$(PIC32_PROG_RELEASE)
@@ -211,7 +211,8 @@ ASFLAGS      = -g1 -Wa,--gdwarf-2
 #
 # chipKIT-application-COMMON.ld added by MPIDE release 0023-macosx-20130715
 LDFLAGS    = $(OPTIMISATION) -Wl,--gc-sections -$(MCU_FLAG_NAME)=$(MCU) -DF_CPU=$(F_CPU)
-LDFLAGS   += -T $(VARIANT_PATH)/$(LDSCRIPT) -T $(CORE_LIB_PATH)/$(LDCOMMON)
+#LDFLAGS   += -T $(VARIANT_PATH)/$(LDSCRIPT) -T $(CORE_LIB_PATH)/$(LDCOMMON)
+LDFLAGS   += -T $(CORE_LIB_PATH)/$(LDSCRIPT) -T $(CORE_LIB_PATH)/$(LDCOMMON)
 LDFLAGS   += -mdebugger -mno-peripheral-libs -nostartfiles
 
 

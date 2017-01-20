@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -18,9 +18,9 @@
 #
 PLATFORM         := Simblee
 BUILD_CORE        = $(call PARSE_BOARD,$(BOARD_TAG),build.core)
-PLATFORM_TAG      = EMBEDXCODE=$(RELEASE_NOW) ARDUINO=10610 SIMBLEE __PROJECT__='"$(PROJECT_NAME_AS_IDENTIFIER).$(SKETCH_EXTENSION)"'
+PLATFORM_TAG      = EMBEDXCODE=$(RELEASE_NOW) ARDUINO=10801 SIMBLEE __PROJECT__='"$(PROJECT_NAME_AS_IDENTIFIER).$(SKETCH_EXTENSION)"'
 APPLICATION_PATH := $(SIMBLEE_PATH)
-PLATFORM_VERSION := $(SIMBLEE_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := $(SIMBLEE_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/Simblee/$(SIMBLEE_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/4.8.3-2014q1

@@ -3,12 +3,12 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Jan 30, 2016 release 4.2.2
+# Last update: Nov 20, 2016 release 5.3.9
 
 
 
@@ -18,9 +18,14 @@
 # Teensy specifics
 # ----------------------------------
 #
-PLATFORM         := Teensy
-PLATFORM_TAG      = ARDUINO=10610 TEENSY_CORE EMBEDXCODE=$(RELEASE_NOW)
-APPLICATION_PATH := $(TEENSY_PATH)
+ifeq ($(BOARD_TAG),glowdeck)
+    PLATFORM         := Glowdeck
+    APPLICATION_PATH := $(GLOWDECK_PATH)
+else
+    PLATFORM         := Teensy
+    APPLICATION_PATH := $(TEENSY_PATH)
+endif
+PLATFORM_TAG      = ARDUINO=10801 TEENSY_CORE EMBEDXCODE=$(RELEASE_NOW)
 
 t001 = $(APPLICATION_PATH)/lib/teensyduino.txt
 t002 = $(APPLICATION_PATH)/lib/version.txt
@@ -33,15 +38,20 @@ PLATFORM_VERSION := $(TEENSY_VERSION) for Arduino $(MODIFIED_ARDUINO_VERSION)
 
 # Automatic Teensy2 or Teensy 3 selection based on build.core
 #
-BOARDS_TXT  := $(APPLICATION_PATH)/hardware/teensy/avr/boards.txt
-BUILD_CORE   = $(call PARSE_BOARD,$(BOARD_TAG),build.core)
+BOARDS_TXT      := $(APPLICATION_PATH)/hardware/teensy/avr/boards.txt
+BUILD_SUBCORE    = $(call PARSE_BOARD,$(BOARD_TAG),build.core)
+#$(info BUILD_SUBCORE $(BUILD_SUBCORE))
 
-ifeq ($(BUILD_CORE),teensy)
+DFLAGS = $(call PARSE_BOARD,$(BOARD_TAG),build.flags.defs)
+
+ifeq ($(BUILD_SUBCORE),teensy)
     include $(MAKEFILE_PATH)/Teensy2.mk
-else ifeq ($(BUILD_CORE),teensy3)
+else ifeq ($(BUILD_SUBCORE),teensy3)
+    include $(MAKEFILE_PATH)/Teensy3.mk
+else ifeq ($(BUILD_SUBCORE),glowdeck)
     include $(MAKEFILE_PATH)/Teensy3.mk
 else
-    $(error $(BUILD_CORE) unknown) 
+    $(error $(BUILD_SUBCORE) unknown) 
 endif
 
 # One single location for Teensyduino application libraries
@@ -54,8 +64,8 @@ a1000    = $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%,$(APP_LIBS_LIST))
 a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(APP_LIBS_LIST)))
 a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
-a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
-a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
+a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_SUBCORE),$(APP_LIBS_LIST)))
+a1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_SUBCORE),$(APP_LIBS_LIST)))
 
 APP_LIB_CPP_SRC = $(foreach dir,$(a1000),$(wildcard $(dir)/*.cpp)) # */
 APP_LIB_C_SRC   = $(foreach dir,$(a1000),$(wildcard $(dir)/*.c)) # */
@@ -104,11 +114,14 @@ OBJCOPYFLAGS  = -R .eeprom -Oihex
 
 # Target
 #
-TARGET_HEXBIN = $(TARGET_HEX)
-TARGET_EEP    = $(OBJDIR)/$(TARGET).eep
+TARGET_HEXBIN    = $(TARGET_HEX)
+#TARGET_EEP    = $(OBJDIR)/$(TARGET).eep
+TARGET_EEP       = $(TARGET_BIN)
+COMMAND_COPY     = $(OBJCOPY) -O binary -R .eeprom $< $@
+
 
 # Link command
 #
-COMMAND_LINK    = $(QUIET)$(CXX) $(OUT_PREPOSITION)$@ $(LOCAL_OBJS) $(LOCAL_ARCHIVES) $(TARGET_A) $(LDFLAGS)
+COMMAND_LINK     = $(QUIET)$(CXX) $(OUT_PREPOSITION)$@ $(LOCAL_OBJS) $(LOCAL_ARCHIVES) $(TARGET_A) $(LDFLAGS)
 
 

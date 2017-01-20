@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,15 +17,15 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM            := RedBearLab
-PLATFORM_TAG         = ARDUINO=10610 ARDUINO_BLEND ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW)
+PLATFORM_TAG         = ARDUINO=10801 ARDUINO_BLEND ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW)
 APPLICATION_PATH    := $(ARDUINO_PATH)
-PLATFORM_VERSION    := AVR $(REDBEARLAB_AVR_165) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION    := AVR $(REDBEARLAB_AVR_165) for Arduino $(ARDUINO_IDE_RELEASE)
 
-HARDWARE_PATH        = $(REDBEARLAB_AVR_PATH)/hardware/avr/$(REDBEARLAB_AVR_RELEASE)
+HARDWARE_PATH        = $(REDBEARLAB_AVR_PATH)/hardware/avr/$(REDBEAR_AVR_RELEASE)
 
 # With ArduinoCC 1.6.6, AVR 1.6.9 used to be under ~/Library
-TOOL_CHAIN_PATH   = $(ARDUINO_AVR_PATH)/tools/avr-gcc/$(AVR_GCC_RELEASE)
-OTHER_TOOLS_PATH  = $(ARDUINO_AVR_PATH)/tools/avrdude/$(AVRDUDE_RELEASE)
+TOOL_CHAIN_PATH   = $(ARDUINO_AVR_PATH)/tools/avr-gcc/$(ARDUINO_AVR_GCC_RELEASE)
+OTHER_TOOLS_PATH  = $(ARDUINO_AVR_PATH)/tools/avrdude/$(ARDUINO_AVRDUDE_RELEASE)
 
 # With ArduinoCC 1.6.7, AVR 1.6.9 is back under Arduino.app
 ifeq ($(wildcard $(TOOL_CHAIN_PATH)),)

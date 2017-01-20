@@ -3,12 +3,12 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Sep 29, 2016 release 5.2.9
+# Last update: Dec 14, 2016 release 5.4.1
 
 
 
@@ -17,7 +17,7 @@
 #
 PLATFORM         := LightBlue
 BUILD_CORE       := avr
-PLATFORM_TAG      = ARDUINO=10611 LIGHTBLUE_CORE EMBEDXCODE=$(RELEASE_NOW) ARDUINO_AVR_UNO ARDUINO_ARCH_AVR
+PLATFORM_TAG      = ARDUINO=10801 LIGHTBLUE_CORE EMBEDXCODE=$(RELEASE_NOW) ARDUINO_AVR_UNO ARDUINO_ARCH_AVR
 APPLICATION_PATH := $(LIGHTBLUE_PATH)
 
 APP_TOOLS_PATH   := $(APPLICATION_PATH)/hardware/tools/avr/bin
@@ -27,16 +27,26 @@ BOARDS_TXT       := $(APPLICATION_PATH)/hardware/LightBlue-Bean/avr/boards.txt
 
 # Uploader
 #
-UPLOADER         = lightblue_loader
-UPLOADER_PATH    = $(APPLICATION_PATH)/hardware/tools/bean
-UPLOADER_EXEC    = $(UPLOADER_PATH)/post_compile
-UPLOADER_OPTS    = -board=$(MCU)
-UPLOADER_OPTS   += -tools=$(UPLOADER_PATH)
-#UPLOADER_OPTS   += -path="$(dir $(abspath Builds))"
-UPLOADER_OPTS   += -path="$(dir $(abspath $(TARGET_HEX)))"
-UPLOADER_OPTS   += -file=embeddedcomputing
-UPLOADER_OPTS   += -bean_variant=$(call PARSE_BOARD,$(BOARD_TAG),build.bean_variant)
-COMMAND_UPLOAD   = $(UPLOADER_EXEC) $(UPLOADER_OPTS)
+TEST_CLI         = $(shell which bean)
+ifneq ($(TEST_CLI),)
+    UPLOADER         = lightblue_loader_cli
+    UPLOADER_EXEC    = $(TEST_CLI)
+#    UPLOADER_OPTS   += program_sketch -a $(BEAN_ADDRESS) $(TARGET_HEX)
+    UPLOADER_OPTS   += program_sketch -n $(BEAN_NAME) $(TARGET_HEX)
+    COMMAND_UPLOAD   = $(UPLOADER_EXEC) $(UPLOADER_OPTS)
+    COMMAND_SERIAL   = $(UPLOADER_EXEC) log_serial -n $(BEAN_NAME)
+
+else
+    UPLOADER         = lightblue_loader
+    UPLOADER_PATH    = $(APPLICATION_PATH)/hardware/tools/bean
+    UPLOADER_EXEC    = $(UPLOADER_PATH)/post_compile
+    UPLOADER_OPTS    = -board=$(MCU)
+    UPLOADER_OPTS   += -tools=$(UPLOADER_PATH)
+    UPLOADER_OPTS   += -path="$(dir $(abspath $(TARGET_HEX)))"
+    UPLOADER_OPTS   += -file=embeddedcomputing
+    UPLOADER_OPTS   += -bean_variant=$(call PARSE_BOARD,$(BOARD_TAG),build.bean_variant)
+    COMMAND_UPLOAD   = $(UPLOADER_EXEC) $(UPLOADER_OPTS)
+endif
 
 #LIGHTBLUE_FLASH_PATH = $(APPLICATION_PATH)/hardware/tools
 #LIGHTBLUE_POST_COMPILE = $(LIGHTBLUE_FLASH_PATH)/Bean\ Loader.app/Contents/Resources/post_compile
@@ -73,6 +83,7 @@ lb1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_L
 lb1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 lb1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 lb1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+lb1000   += $(foreach dir,$(APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 APP_LIB_CPP_SRC = $(foreach dir,$(lb1000),$(wildcard $(dir)/*.cpp)) # */
 APP_LIB_C_SRC   = $(foreach dir,$(lb1000),$(wildcard $(dir)/*.c)) # */

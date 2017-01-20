@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -22,7 +22,7 @@ PLATFORM         := UDOO
 BUILD_CORE       := NeoM4
 PLATFORM_TAG      = ARDUINO=10610 EMBEDXCODE=$(RELEASE_NOW) $(filter __%__ ,$(GCC_PREPROCESSOR_DEFINITIONS)) UDOO_NEO_M4
 APPLICATION_PATH := $(ARDUINO_PATH)
-PLATFORM_VERSION := Neo $(UDOO_NEO_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := Neo $(UDOO_NEO_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(UDOO_NEO_PATH)/hardware/solox/$(UDOO_NEO_RELEASE)
 TOOL_CHAIN_PATH   = $(UDOO_NEO_PATH)/tools/gcc-arm-none-eabi/$(UDOO_GCC_ARM_RELEASE)
@@ -131,6 +131,7 @@ APP_LIB_OBJS    += $(patsubst $(HARDWARE_PATH)/%.c,$(OBJDIR)/%.c.o,$(APP_LIB_C_S
 #samd165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(APP_LIBS_LIST)))
 #samd165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 #samd165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+#samd165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 #
 #BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(samd165_10),$(wildcard $(dir)/*.cpp)) # */
 #BUILD_APP_LIB_C_SRC   = $(foreach dir,$(samd165_10),$(wildcard $(dir)/*.c)) # */
@@ -180,7 +181,8 @@ USB_TOUCH := $(call PARSE_BOARD,$(BOARD_TAG),upload.use_1200bps_touch)
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION   ?= -O0 -g3
+    OPTIMISATION   ?= -Os -g3
+#    OPTIMISATION   ?= -O0 -g3
 else
     OPTIMISATION   ?= -Os -g
 endif

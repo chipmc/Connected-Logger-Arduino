@@ -20,7 +20,7 @@
 // THE SKETCH IS IN Connected_Logger_Arduino.cpp
 // ----------------------------------
 //
-// Last update: Sep 16, 2016 release 5.2.5
+// Last update: Jan 18, 2017 release 6.0.9
 
 // IDE selection
 #if defined(EMBEDXCODE)
@@ -511,7 +511,7 @@ void dummy_core(void) {}
 //}
 
 
-#elif defined(__LINKIT_ONE__)
+#elif defined(__LINKIT_ONE__) || defined(ARDUINO_MTK_ONE)
 #warning MAIN_SECTION 1 = LINKIT_ONE
 // ============================================================================= LinkIt One specific
 
@@ -612,7 +612,7 @@ void vm_main(void)
     vm_thread_change_priority(handle, 245);
 }
 
-#elif defined(__LINKIT_DUO__)
+#elif defined(__LINKIT_DUO__) || defined(ARDUINO_AVR_LINKITSMART7688)
 #warning MAIN_SECTION 38 = LINKIT_DUO
 // ============================================================================= LinkIt Smart 7688 Duo specific
 
@@ -676,7 +676,7 @@ int main(void)
 }
 
 
-#elif defined(ESP8266)
+#elif defined(ESP8266) || defined(ARDUINO_ARCH_ESP8266)
 #warning MAIN_SECTION 2 = ESP8266
 // ============================================================================= ESP8266 specific
 
@@ -704,160 +704,8 @@ int main(void)
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/*  RELEASE 2.2.0 only
+// RELEASE 2.3.0 only
 
-    //This may be used to change user task stack size:
-    //#define CONT_STACKSIZE 4096
-    #include <Arduino.h>
-    extern "C" {
-    #include "ets_sys.h"
-    #include "os_type.h"
-    #include "osapi.h"
-    #include "mem.h"
-    #include "user_interface.h"
-    #include "cont.h"
-    }
-    #define LOOP_TASK_PRIORITY 0
-    #define LOOP_QUEUE_SIZE    1
-
-    #define OPTIMISTIC_YIELD_TIME_US 16000
-
-    struct rst_info resetInfo;
-
-    int atexit(void (*func)())
-    {
-    return 0;
-    }
-
-    extern "C" void ets_update_cpu_frequency(int freqmhz);
-    void initVariant() __attribute__((weak));
-    void initVariant()
-    {
-    }
-
-    extern void loop();
-    extern void setup();
-
-    void preloop_update_frequency() __attribute__((weak));
-    void preloop_update_frequency()
-    {
-    #if defined(F_CPU) && (F_CPU == 160000000L)
-    REG_SET_BIT(0x3ff00014, BIT(0));
-    ets_update_cpu_frequency(160);
-    #endif
-    }
-
-    extern void (*__init_array_start)(void);
-    extern void (*__init_array_end)(void);
-
-    cont_t g_cont __attribute__((aligned(16)));
-    static os_event_t g_loop_queue[LOOP_QUEUE_SIZE];
-
-    static uint32_t g_micros_at_task_start;
-
-    extern "C" void esp_yield()
-    {
-    if (cont_can_yield(&g_cont))
-    {
-        cont_yield(&g_cont);
-    }
-    }
-
-    extern "C" void esp_schedule()
-    {
-    system_os_post(LOOP_TASK_PRIORITY, 0, 0);
-    }
-
-    extern "C" void __yield()
-    {
-    if (cont_can_yield(&g_cont))
-    {
-        esp_schedule();
-        esp_yield();
-    }
-    else
-    {
-        panic();
-    }
-    }
-
-    extern "C" void yield(void) __attribute__((weak, alias("__yield")));
-
-    extern "C" void optimistic_yield(uint32_t interval_us)
-    {
-    if (cont_can_yield(&g_cont) &&
-        (system_get_time() - g_micros_at_task_start) > interval_us)
-    {
-        yield();
-    }
-
-    static void loop_wrapper()
-    {
-    static bool setup_done = false;
-    if (!setup_done)
-    {
-        setup();
-        setup_done = true;
-    }
-    preloop_update_frequency();
-    loop();
-    esp_schedule();
-    }
-
-    static void loop_task(os_event_t *events)
-    {
-    g_micros_at_task_start = system_get_time();
-    cont_run(&g_cont, &loop_wrapper);
-    if (cont_check(&g_cont) != 0)
-    {
-        panic();
-    }
-    }
-
-    static void do_global_ctors(void)
-    {
-    void (**p)(void);
-    for (p = &__init_array_start; p != &__init_array_end; ++p)
-    {
-        (*p)();
-    }
-    }
-
-    extern "C" void __gdb_init() {}
-    extern "C" void gdb_init(void) __attribute__((weak, alias("__gdb_init")));
-
-    void init_done()
-    {
-    system_set_os_print(1);
-    gdb_init();
-    do_global_ctors();
-    esp_schedule();
-    }
-
-
-    extern "C" void user_init(void)
-    {
-    struct rst_info *rtc_info_ptr = system_get_rst_info();
-    memcpy((void *) &resetInfo, (void *) rtc_info_ptr, sizeof(resetInfo));
-
-    uart_div_modify(0, UART_CLK_FREQ / (115200));
-
-    init();
-
-    initVariant();
-
-    cont_init(&g_cont);
-
-    system_os_task(loop_task,
-                   LOOP_TASK_PRIORITY, g_loop_queue,
-                   LOOP_QUEUE_SIZE);
-
-    system_init_done_cb(&init_done);
-    }
-*/
-
-/*  RELEASE 2.3.0 only
-*/
 /*
     main.cpp - platform initialization and context switching
     emulation
@@ -1050,7 +898,6 @@ extern "C" void user_init(void)
 
     system_init_done_cb(&init_done);
 }
-
 
 
 #elif defined(SPARK) || defined(PARTICLE)
@@ -1364,7 +1211,7 @@ int main(void)
 }
 
 
-#elif defined(MPIDE) || defined(CHIPKIT)
+#elif defined(MPIDE) || defined(CHIPKIT) || defined(ARDUINO_ARCH_PIC32)
 #warning MAIN_SECTION 5 = chipKIT
 // ============================================================================= chipKIT specific
 
@@ -1489,7 +1336,7 @@ int main(void)
 #include "rtosTasks.h"
 
 
-#if defined(__CC3200R1M1RGC__) || defined(__CC3200R1MXRGCR__) || defined(ENERGIA_ARCH_CC3200)
+#if defined(__CC3200R1M1RGC__) || defined(__CC3200R1MXRGCR__) || defined(ENERGIA_ARCH_CC3200) || defined(ENERGIA_ARCH_CC3200EMT)
 #warning MAIN_SECTION 7 = CC3200 EMT
 // ----------------------------------------------------------------------------- LaunchPad CC3200 with RTOS specific
 
@@ -1989,11 +1836,12 @@ int main()
 
 #elif defined(__CC1310__) || defined(ENERGIA_ARCH_CC13XX)
 #warning MAIN_SECTION 41 = CC1310 EMT
+// ----------------------------------------------------------------------------- LaunchPad CC1310 specific
 
 /*
- *  ======== main.cpp ========
- *  MT wiring Task framework
- */
+    ======== main.cpp ========
+    MT wiring Task framework
+*/
 #include <stddef.h>
 //#include <oslib/osi.h>
 
@@ -2013,11 +1861,11 @@ int main()
 
 Void the_task(UArg _task_setup, UArg _task_loop);
 
-/* set priority of simple link callbacks
- * must be >= 0 and < Task_numPriorities
- * where Task_numPriorities is set by
- * TI-RTOS config
- */
+/*  set priority of simple link callbacks
+    must be >= 0 and < Task_numPriorities
+    where Task_numPriorities is set by
+    TI-RTOS config
+*/
 
 
 // ~
@@ -2060,54 +1908,56 @@ void rtos_Setup()
 /// @}
 
 /*
- *  ======== main task ========
- */
+    ======== main task ========
+*/
 Void the_task(UArg _task_setup, UArg _task_loop)
 {
     /* Call setup once */
     (*(void(*)()) _task_setup)();
-    
+
     /* Call loop repeatedly */
-    for(;;) {
+    for (;;)
+    {
         (*(void(*)()) _task_loop)();
         System_flush();
         Task_yield();
     }
 }
 /*
- *  ======== main ========
- */
+    ======== main ========
+*/
 int main()
 {
     /* initialize all device/board specific peripherals */
     Board_init();  /* this function is generated as part of TI-RTOS config */
-    
-    /* The SimpleLink Host Driver requires a mechanism to allow functions to
-     * execute in task context.  The SpawnTask is created to handle such
-     * situations.  This task will remain blocked until the host driver
-     * posts a function.  If the SpawnTask priority is higher than other
-     * tasks, it will immediately execute that function and return to a
-     * blocked state.  Otherwise, it will remain ready until it has
-     * the highest priority of any ready function.
-     */
-    
+
+    /*  The SimpleLink Host Driver requires a mechanism to allow functions to
+        execute in task context.  The SpawnTask is created to handle such
+        situations.  This task will remain blocked until the host driver
+        posts a function.  If the SpawnTask priority is higher than other
+        tasks, it will immediately execute that function and return to a
+        blocked state.  Otherwise, it will remain ready until it has
+        the highest priority of any ready function.
+    */
+
     Task_Params taskParams;
-    
+
     /* initialize taskParams and set to default */
     Task_Params_init(&taskParams);
-    
+
     /* All tasks have the same priority */
     taskParams.priority = Task_numPriorities - 2;
     taskParams.stackSize = 0x800;
-    
+
 //    // ~
 //    // Add rtosSetup() as first tasks
 //    taskParams.instance->name = (xdc_String) "rtosSetup";
 //    Task_create((Task_FuncPtr) rtos_Setup, &taskParams, NULL);
-//    // ~~    
+//    // ~~
 
     uint8_t i = 0;
-    for(i = 0; i < NUM_SKETCHES; i++) {
+    for (i = 0; i < NUM_SKETCHES; i++)
+    {
         /* Set arg0 to setup() */
         taskParams.arg0 = (xdc_UArg)func_ptr[i][0];
         /* Set ar1 to loop */
@@ -2117,10 +1967,10 @@ int main()
         /* Create the task */
         Task_create(the_task, &taskParams, NULL);
     }
-    
+
     /* does not return */
     BIOS_start();
-    
+
     return (0); /* should never get here, but just in case ... */
 }
 
@@ -2462,11 +2312,90 @@ int main(void)
     return 0;
 }
 
+#elif defined(STM32DUINO)
+#warning MAIN_SECTION 43 = STM32duino
+
+/******************************************************************************
+    The MIT License
+
+    Copyright (c) 2010 LeafLabs LLC.
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy,
+    modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+    BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+    ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+ *****************************************************************************/
+
+extern void setup(void);
+extern void loop(void);
+extern void init(void);
+
+// Force init to be called *first*, i.e. before static object allocation.
+// Otherwise, statically allocated objects that need libmaple may fail.
+__attribute__((constructor)) void premain()
+{
+    init();
+}
+
+int main(void)
+{
+    setup();
+
+    while (1)
+    {
+        loop();
+    }
+    return 0;
+}
+
+
+#elif defined(GLOWDECK) || defined(CORE_GLOWDECK)
+#warning MAIN_SECTION 42 = Glowdeck
+// ============================================================================= Glowdeck specific
+
+#include "WProgram.h"
+#include <EEPROM.h>
+
+void dfu_mode()
+{
+    EEPROM.write(0, 13);
+#define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
+#define CPU_RESTART_VAL 0x5FA0004
+#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL);
+    CPU_RESTART;
+}
+
+extern "C" int main(void)
+{
+    // Arduino's main() function just calls setup() and loop()....
+    setup();
+    while (1)
+    {
+        loop();
+        yield();
+    }
+}
+
 
 #elif defined(TEENSYDUINO) || defined(CORE_TEENSY)
 // ============================================================================= Teensy specific
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__) || defined(__MKL26Z64__)
 #warning MAIN_SECTION 16 = Teensy 3
 // ----------------------------------------------------------------------------- Teensy 3 specific
 
@@ -2860,291 +2789,907 @@ int __attribute__((weak)) main(void)
 #elif defined(ARDUINO)
 // ============================================================================= Arduino specific
 
-#if (ARDUINO < 100)
-#warning MAIN_SECTION 23 = Arduino 0023
-// ----------------------------------------------------------------------------- Arduino 0023 specific
+//#if (ARDUINO < 100)
+//#warning MAIN_SECTION 23 = Arduino 0023
+//// ----------------------------------------------------------------------------- Arduino 0023 specific
+//
+//#include "WProgram.h"
+//
+//int main(void)
+//{
+//    init();
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//    }
+//
+//    return 0;
+//}
+//
+//
+//#elif (ARDUINO < 150)
+//#warning MAIN_SECTION 24 = Arduino 1.0.x
+//// ----------------------------------------------------------------------------- Arduino 1.0.x specific
+//
+//#include "Arduino.h"
+//
+//int main(void)
+//{
+//    init();
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//
+//#elif (ARDUINO < 10600)
+//// ----------------------------------------------------------------------------- Arduino 1.5.x specific
+//
+//#if defined(__ARDUINO_X86__)
+//#warning MAIN_SECTION 25 = Arduino 1.5.x X86
+//// ............................................................................. Arduino 1.5.x X86 architecture specific
+//
+///*
+//    main.cpp userspace main loop for Intel Galileo family boards
+//    Copyright (C) 2014 Intel Corporation
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    Licence as published by the Free Software Foundation; either
+//    version 2.1 of the Licence, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public Licence for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    Licence along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+//*/
+//// Arduino hooks
+//#include <Arduino.h>
+//#include <trace.h>
+//#include <interrupt.h>
+//#include <sys/stat.h>
+//
+//#define PLATFORM_NAME_PATH "/sys/devices/platform/"
+//
+///************************ Static *************************/
+//#define MY_TRACE_PREFIX __FILE__
+//
+///************************ Global *************************/
+//int main(int argc, char * argv[])
+//{
+//    char *platform_path = NULL;
+//    struct stat s;
+//    int err;
+//
+//    // Install a signal handler
+//
+//    // make ttyprintk at some point
+//    stdout = freopen("/tmp/log.txt", "w", stdout);
+//    if (stdout == NULL)
+//    {
+//        fprintf(stderr, "unable to remap stdout !\n");
+//        exit(-1);
+//    }
+//    fflush(stdout);
+//
+//    stderr = freopen("/tmp/log_er.txt", "w", stderr);
+//    if (stderr == NULL)
+//    {
+//        printf("Unable to remap stderr !\n");
+//        exit(-1);
+//    }
+//    fflush(stderr);
+//
+//    // Snapshot time counter
+//    if (timeInit() < 0)
+//    {
+//        exit(-1);
+//    }
+//
+//    // debug for the user
+//    if (argc < 2)
+//    {
+//        fprintf(stderr, "./sketch tty0\n");
+//        return -1;
+//    }
+//    printf("started with binary=%s Serial=%s\n", argv[0], argv[1]);
+//    fflush(stdout);
+//
+//    // check if we're running on the correct platform
+//    // and refuse to run if no match
+//
+//#ifdef GALILEO_IDE
+//    platform_path = (char *)malloc(sizeof(PLATFORM_NAME_PATH) + sizeof(PLATFORM_NAME));
+//    sprintf(platform_path, "%s%s", PLATFORM_NAME_PATH, PLATFORM_NAME);
+//
+//    printf("checking platform_path [%s]\n", platform_path);
+//    fflush(stdout);
+//
+//    err = stat(platform_path, &s);
+//
+//    if (err != 0)
+//    {
+//        fprintf(stderr, "stat failed checking for %s with error code %d\n", PLATFORM_NAME, err);
+//        free(platform_path);
+//        return -1;
+//    }
+//    if (!S_ISDIR(s.st_mode))
+//    {
+//        /* exists but is no dir */
+//        fprintf(stderr, "Target board not a %s\n", PLATFORM_NAME);
+//        free(platform_path);
+//        return -1;
+//    }
+//
+//    printf("Running on a %s platform (%s)\n", PLATFORM_NAME, platform_path);
+//    fflush(stdout);
+//
+//    free(platform_path);
+//#endif
+//
+//    // TODO: derive trace level and optional IP from command line
+//    trace_init(VARIANT_TRACE_LEVEL, 0);
+//    trace_target_enable(TRACE_TARGET_UART);
+//
+//    // Call Arduino init
+//    init(argc, argv);
+//
+//    // Init IRQ layer
+//    // Called after init() to ensure I/O permissions inherited by pthread
+//    interrupt_init();
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//    for (;;)
+//    {
+//        loop();
+//        //if (serialEventRun) serialEventRun();
+//    }
+//    return 0;
+//}
+//
+//
+//#elif defined(__SAM3X8E__)
+//#warning MAIN_SECTION 26 = Arduino 1.5.x SAM
+//// ............................................................................. Arduino 1.5.x SAM architecture specific
+//
+///*
+//    Copyright (c) 2011 Arduino.  All rights reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    Licence as published by the Free Software Foundation; either
+//    version 2.1 of the Licence, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//    See the GNU Lesser General Public Licence for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    Licence along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#define ARDUINO_MAIN
+//#include "Arduino.h"
+//
+///*
+//    Cortex-M3 Systick IT handler
+//*/
+///*
+//    extern void SysTick_Handler( void )
+//    {
+//    // Increment tick count each ms
+//    TimeTick_Increment() ;
+//    }
+//*/
+//
+///*
+//    \brief Main entry point of Arduino application
+//*/
+//int main(void)
+//{
+//    init();
+//
+//    delay(1);
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//#else
+//#warning MAIN_SECTION 27 = Arduino 1.5.x AVR
+//// ............................................................................. Arduino 1.5.x AVR architecture specific
+//
+//#include "Arduino.h"
+//
+//int main(void)
+//{
+//    init();
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//
+//#endif                                                                          // end architecture Arduino 1.5.x
+//
+//#elif (ARDUINO < 10700)
+//// ----------------------------------------------------------------------------- Arduino 1.6.x specific
+//
+//#if defined(__ARDUINO_X86__)
+//#warning MAIN_SECTION 28 = Arduino 1.6.x X86
+//// ............................................................................. Arduino 1.6.x X86 architecture specific
+//
+///*
+//    main.cpp userspace main loop for Intel Galileo family boards
+//    Copyright (C) 2014 Intel Corporation
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    Licence as published by the Free Software Foundation; either
+//    version 2.1 of the Licence, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public Licence for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    Licence along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+//*/
+//// Arduino hooks
+//#include <Arduino.h>
+//#include <trace.h>
+//#include <interrupt.h>
+//#include <sys/stat.h>
+//
+//#define PLATFORM_NAME_PATH "/sys/devices/platform/"
+//
+///************************ Static *************************/
+//#define MY_TRACE_PREFIX __FILE__
+//
+///************************ Global *************************/
+//int main(int argc, char * argv[])
+//{
+//    char *platform_path = NULL;
+//    struct stat s;
+//    int err;
+//
+//    // Install a signal handler
+//
+//    // make ttyprintk at some point
+//    stdout = freopen("/tmp/log.txt", "w", stdout);
+//    if (stdout == NULL)
+//    {
+//        fprintf(stderr, "unable to remap stdout !\n");
+//        exit(-1);
+//    }
+//    fflush(stdout);
+//
+//    stderr = freopen("/tmp/log_er.txt", "w", stderr);
+//    if (stderr == NULL)
+//    {
+//        printf("Unable to remap stderr !\n");
+//        exit(-1);
+//    }
+//    fflush(stderr);
+//
+//    // Snapshot time counter
+//    if (timeInit() < 0)
+//    {
+//        exit(-1);
+//    }
+//
+//    // debug for the user
+//    if (argc < 2)
+//    {
+//        fprintf(stderr, "./sketch tty0\n");
+//        return -1;
+//    }
+//    printf("started with binary=%s Serial=%s\n", argv[0], argv[1]);
+//    fflush(stdout);
+//
+//    // check if we're running on the correct platform
+//    // and refuse to run if no match
+//
+//#ifdef GALILEO_IDE
+//    platform_path = (char *)malloc(sizeof(PLATFORM_NAME_PATH) + sizeof(PLATFORM_NAME));
+//    sprintf(platform_path, "%s%s", PLATFORM_NAME_PATH, PLATFORM_NAME);
+//
+//    printf("checking platform_path [%s]\n", platform_path);
+//    fflush(stdout);
+//
+//    err = stat(platform_path, &s);
+//
+//    if (err != 0)
+//    {
+//        fprintf(stderr, "stat failed checking for %s with error code %d\n", PLATFORM_NAME, err);
+//        free(platform_path);
+//        return -1;
+//    }
+//    if (!S_ISDIR(s.st_mode))
+//    {
+//        /* exists but is no dir */
+//        fprintf(stderr, "Target board not a %s\n", PLATFORM_NAME);
+//        free(platform_path);
+//        return -1;
+//    }
+//
+//    printf("Running on a %s platform (%s)\n", PLATFORM_NAME, platform_path);
+//    fflush(stdout);
+//
+//    free(platform_path);
+//#endif
+//
+//    // TODO: derive trace level and optional IP from command line
+//    trace_init(VARIANT_TRACE_LEVEL, 0);
+//    trace_target_enable(TRACE_TARGET_UART);
+//
+//    // Call Arduino init
+//    init(argc, argv);
+//
+//    // Init IRQ layer
+//    // Called after init() to ensure I/O permissions inherited by pthread
+//    interrupt_init();
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//    for (;;)
+//    {
+//        loop();
+//        //if (serialEventRun) serialEventRun();
+//    }
+//    return 0;
+//}
+//
+//#elif defined(CURIE_IDE) || defined(__ARDUINO_ARC__)
+//#warning MAIN_SECTION 40 = Arduino 1.6.x ARC32
+//// ............................................................................. Arduino 1.6.x Curie architecture specific
+//
+///*
+//    main.cpp userspace main loop for Arduino 101 family boards
+//    Copyright (C) 2014 Intel Corporation
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+//*/
+//// Arduino hooks
+//#include "Arduino.h"
+//
+//// Weak empty variant initialization function.
+//// May be redefined by variant files.
+//void initVariant() __attribute__((weak));
+//void initVariant() { }
+//
+///*
+//    \brief Main entry point of Arduino application
+//*/
+//int main(void)
+//{
+//    //init();
+//
+//    initVariant();
+//
+//    // delay(1);
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;) /* This infinite loop is intentional and requested by design */
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//
+//#elif defined(__SAM3X8E__)
+//#warning MAIN_SECTION 29 = Arduino 1.6.x SAM
+//// ............................................................................. Arduino 1.6.x SAM architecture specific
+//
+///*
+//    main.cpp - Main loop for Arduino sketches
+//    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    Licence as published by the Free Software Foundation; either
+//    version 2.1 of the Licence, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public Licence for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    Licence along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#define ARDUINO_MAIN
+//#include "Arduino.h"
+//
+///*
+//    main.cpp - Main loop for Arduino sketches
+//    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    Licence as published by the Free Software Foundation; either
+//    version 2.1 of the Licence, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public Licence for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    Licence along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#define ARDUINO_MAIN
+//#include "Arduino.h"
+//
+///*
+//    Cortex-M3 Systick IT handler
+//*/
+///*
+//    extern void SysTick_Handler( void )
+//    {
+//    // Increment tick count each ms
+//    TimeTick_Increment() ;
+//    }
+//*/
+//
+//// Weak empty variant initialization function.
+//// May be redefined by variant files.
+//void initVariant() __attribute__((weak));
+//void initVariant() { }
+//
+///*
+//    \brief Main entry point of Arduino application
+//*/
+//int main(void)
+//{
+//    // Initialize watchdog
+//    watchdogSetup();
+//
+//    init();
+//
+//    initVariant();
+//
+//    delay(1);
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//#elif defined(__SAMD21G18A__)
+//#warning MAIN_SECTION 30 = Arduino 1.6.x SAMD
+//// ............................................................................. Arduino 1.6.x SAMD architecture specific
+//
+///*
+//    Copyright (c) 2015 Arduino LLC.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//    See the GNU Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#define ARDUINO_MAIN
+//#include "Arduino.h"
+//
+//// Weak empty variant initialization function.
+//// May be redefined by variant files.
+//void initVariant() __attribute__((weak));
+//void initVariant() { }
+//
+//// Initialize C library
+//extern "C" void __libc_init_array(void);
+//
+///*
+//    \brief Main entry point of Arduino application
+//*/
+//int main(void)
+//{
+//    init();
+//
+//    __libc_init_array();
+//
+//    initVariant();
+//
+//    delay(1);
+//#if defined(USBCON)
+//    USBDevice.init();
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//
+//#else
+//#warning MAIN_SECTION 31 = Arduino 1.6.x AVR
+//// ............................................................................. Arduino 1.6.x AVR architecture specific
+//
+///*
+//    main.cpp - Main loop for Arduino sketches
+//    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#include <Arduino.h>
+//
+//// Declared weak in Arduino.h to allow user redefinitions.
+//int atexit(void (* /*func*/)())
+//{
+//    return 0;
+//}
+//
+//// Weak empty variant initialization function.
+//// May be redefined by variant files.
+//void initVariant() __attribute__((weak));
+//void initVariant() { }
+//
+//void setupUSB() __attribute__((weak));
+//void setupUSB() { }
+//
+//int main(void)
+//{
+//    init();
+//
+//    initVariant();
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//#endif                                                                          // end architecture Arduino 1.6.0
+//
+//#elif (ARDUINO < 10800)
+//// ----------------------------------------------------------------------------- Arduino 1.7.x specific
+//
+//#if defined(__SAM3X8E__)
+//#warning MAIN_SECTION 32 = Arduino 1.7.x SAM
+//// ............................................................................. Arduino 1.7.x SAM architecture specific
+//
+///*
+//    main.cpp - Main loop for Arduino sketches
+//    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#define ARDUINO_MAIN
+//#include "Arduino.h"
+//
+///*
+//    Cortex-M3 Systick IT handler
+//*/
+///*
+//    extern void SysTick_Handler( void )
+//    {
+//    // Increment tick count each ms
+//    TimeTick_Increment() ;
+//    }
+//*/
+//
+//// Weak empty variant initialization function.
+//// May be redefined by variant files.
+//void initVariant() __attribute__((weak));
+//void initVariant() { }
+//
+///*
+//    \brief Main entry point of Arduino application
+//*/
+//int main(void)
+//{
+//    init();
+//
+//    initVariant();
+//
+//    delay(1);
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//#elif defined(__SAMD21G18A__)
+//#warning MAIN_SECTION 33 = Arduino 1.7.x SAMD
+//// ............................................................................. Arduino 1.7.x SAMD architecture specific
+//
+///*
+//    main.cpp - Main loop for Arduino sketches
+//    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#define ARDUINO_MAIN
+//#include "Arduino.h"
+//
+///*
+//    \brief Main entry point of Arduino application
+//*/
+//int main(void)
+//{
+//    init();
+//
+//    delay(1);
+//#if defined(USBCON)
+//    USBDevice.init();
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//#else
+//#warning MAIN_SECTION 34 = Arduino 1.7.x AVR
+//// ............................................................................. Arduino 1.7.x AVR architecture specific
+//
+///*
+//    main.cpp - Main loop for Arduino sketches
+//    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
+//
+//    This library is free software; you can redistribute it and/or
+//    modify it under the terms of the GNU Lesser General Public
+//    License as published by the Free Software Foundation; either
+//    version 2.1 of the License, or (at your option) any later version.
+//
+//    This library is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//    Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public
+//    License along with this library; if not, write to the Free Software
+//    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//*/
+//
+//#include <Arduino.h>
+//
+////Declared weak in Arduino.h to allow user redefinitions.
+//int atexit(void (*func)())
+//{
+//    return 0;
+//}
+//
+//// Weak empty variant initialization function.
+//// May be redefined by variant files.
+//void initVariant() __attribute__((weak));
+//void initVariant() { }
+//
+//int main(void)
+//{
+//    init();
+//
+//    initVariant();
+//
+//#if defined(USBCON)
+//    USBDevice.attach();
+//#endif
+//
+//    setup();
+//
+//    for (;;)
+//    {
+//        loop();
+//        if (serialEventRun)
+//        {
+//            serialEventRun();
+//        }
+//    }
+//
+//    return 0;
+//}
+//
+//#endif                                                                          // end architecture Arduino 1.7.0
 
-#include "WProgram.h"
+#if (ARDUINO < 10800)
+// ----------------------------------------------------------------------------- Arduino < 1.8.x specific
+#error Arduino 1.8.0 required
 
-int main(void)
-{
-    init();
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-    }
-
-    return 0;
-}
-
-
-#elif (ARDUINO < 150)
-#warning MAIN_SECTION 24 = Arduino 1.0.x
-// ----------------------------------------------------------------------------- Arduino 1.0.x specific
-
-#include "Arduino.h"
-
-int main(void)
-{
-    init();
-
-#if defined(USBCON)
-    USBDevice.attach();
-#endif
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-        if (serialEventRun)
-        {
-            serialEventRun();
-        }
-    }
-
-    return 0;
-}
-
-
-#elif (ARDUINO < 10600)
-// ----------------------------------------------------------------------------- Arduino 1.5.x specific
-
-#if defined(__ARDUINO_X86__)
-#warning MAIN_SECTION 25 = Arduino 1.5.x X86
-// ............................................................................. Arduino 1.5.x X86 architecture specific
-
-/*
-    main.cpp userspace main loop for Intel Galileo family boards
-    Copyright (C) 2014 Intel Corporation
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    Licence as published by the Free Software Foundation; either
-    version 2.1 of the Licence, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public Licence for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    Licence along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-*/
-// Arduino hooks
-#include <Arduino.h>
-#include <trace.h>
-#include <interrupt.h>
-#include <sys/stat.h>
-
-#define PLATFORM_NAME_PATH "/sys/devices/platform/"
-
-/************************ Static *************************/
-#define MY_TRACE_PREFIX __FILE__
-
-/************************ Global *************************/
-int main(int argc, char * argv[])
-{
-    char *platform_path = NULL;
-    struct stat s;
-    int err;
-
-    // Install a signal handler
-
-    // make ttyprintk at some point
-    stdout = freopen("/tmp/log.txt", "w", stdout);
-    if (stdout == NULL)
-    {
-        fprintf(stderr, "unable to remap stdout !\n");
-        exit(-1);
-    }
-    fflush(stdout);
-
-    stderr = freopen("/tmp/log_er.txt", "w", stderr);
-    if (stderr == NULL)
-    {
-        printf("Unable to remap stderr !\n");
-        exit(-1);
-    }
-    fflush(stderr);
-
-    // Snapshot time counter
-    if (timeInit() < 0)
-    {
-        exit(-1);
-    }
-
-    // debug for the user
-    if (argc < 2)
-    {
-        fprintf(stderr, "./sketch tty0\n");
-        return -1;
-    }
-    printf("started with binary=%s Serial=%s\n", argv[0], argv[1]);
-    fflush(stdout);
-
-    // check if we're running on the correct platform
-    // and refuse to run if no match
-
-#ifdef GALILEO_IDE
-    platform_path = (char *)malloc(sizeof(PLATFORM_NAME_PATH) + sizeof(PLATFORM_NAME));
-    sprintf(platform_path, "%s%s", PLATFORM_NAME_PATH, PLATFORM_NAME);
-
-    printf("checking platform_path [%s]\n", platform_path);
-    fflush(stdout);
-
-    err = stat(platform_path, &s);
-
-    if (err != 0)
-    {
-        fprintf(stderr, "stat failed checking for %s with error code %d\n", PLATFORM_NAME, err);
-        free(platform_path);
-        return -1;
-    }
-    if (!S_ISDIR(s.st_mode))
-    {
-        /* exists but is no dir */
-        fprintf(stderr, "Target board not a %s\n", PLATFORM_NAME);
-        free(platform_path);
-        return -1;
-    }
-
-    printf("Running on a %s platform (%s)\n", PLATFORM_NAME, platform_path);
-    fflush(stdout);
-
-    free(platform_path);
-#endif
-
-    // TODO: derive trace level and optional IP from command line
-    trace_init(VARIANT_TRACE_LEVEL, 0);
-    trace_target_enable(TRACE_TARGET_UART);
-
-    // Call Arduino init
-    init(argc, argv);
-
-    // Init IRQ layer
-    // Called after init() to ensure I/O permissions inherited by pthread
-    interrupt_init();
-
-#if defined(USBCON)
-    USBDevice.attach();
-#endif
-
-    setup();
-    for (;;)
-    {
-        loop();
-        //if (serialEventRun) serialEventRun();
-    }
-    return 0;
-}
-
-
-#elif defined(__SAM3X8E__)
-#warning MAIN_SECTION 26 = Arduino 1.5.x SAM
-// ............................................................................. Arduino 1.5.x SAM architecture specific
-
-/*
-    Copyright (c) 2011 Arduino.  All rights reserved.
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    Licence as published by the Free Software Foundation; either
-    version 2.1 of the Licence, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-    See the GNU Lesser General Public Licence for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    Licence along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-#define ARDUINO_MAIN
-#include "Arduino.h"
-
-/*
-    Cortex-M3 Systick IT handler
-*/
-/*
-    extern void SysTick_Handler( void )
-    {
-    // Increment tick count each ms
-    TimeTick_Increment() ;
-    }
-*/
-
-/*
-    \brief Main entry point of Arduino application
-*/
-int main(void)
-{
-    init();
-
-    delay(1);
-
-#if defined(USBCON)
-    USBDevice.attach();
-#endif
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-        if (serialEventRun)
-        {
-            serialEventRun();
-        }
-    }
-
-    return 0;
-}
 
 #else
-#warning MAIN_SECTION 27 = Arduino 1.5.x AVR
-// ............................................................................. Arduino 1.5.x AVR architecture specific
+// ----------------------------------------------------------------------------- Arduino 1.8.x specific
 
-#include "Arduino.h"
-
-int main(void)
-{
-    init();
-
-#if defined(USBCON)
-    USBDevice.attach();
-#endif
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-        if (serialEventRun)
-        {
-            serialEventRun();
-        }
-    }
-
-    return 0;
-}
-
-
-#endif                                                                          // end architecture Arduino 1.5.x
-
-#elif (ARDUINO < 10700)
-// ----------------------------------------------------------------------------- Arduino 1.6.x specific
 
 #if defined(__ARDUINO_X86__)
-#warning MAIN_SECTION 28 = Arduino 1.6.x X86
-// ............................................................................. Arduino 1.6.x X86 architecture specific
+#warning MAIN_SECTION 28 = Arduino 1.8.x X86
+// ............................................................................. Arduino 1.8.x X86 architecture specific
 
 /*
     main.cpp userspace main loop for Intel Galileo family boards
@@ -3152,16 +3697,16 @@ int main(void)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
-    Licence as published by the Free Software Foundation; either
-    version 2.1 of the Licence, or (at your option) any later version.
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
 
     This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public Licence for more details.
+    Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public
-    Licence along with this library; if not, write to the Free Software
+    License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
@@ -3220,7 +3765,7 @@ int main(int argc, char * argv[])
     // check if we're running on the correct platform
     // and refuse to run if no match
 
-#ifdef GALILEO_IDE
+#if GALILEO_IDE
     platform_path = (char *)malloc(sizeof(PLATFORM_NAME_PATH) + sizeof(PLATFORM_NAME));
     sprintf(platform_path, "%s%s", PLATFORM_NAME_PATH, PLATFORM_NAME);
 
@@ -3273,8 +3818,9 @@ int main(int argc, char * argv[])
     return 0;
 }
 
-#elif defined(CURIE_IDE) || defined(__ARDUINO_ARC__)
-#warning MAIN_SECTION 40 = Arduino 1.6.x ARC32
+#elif defined(CURIE_IDE) || defined(__ARDUINO_ARC__) || defined(ARDUINO_ARCH_ARC32)
+#warning MAIN_SECTION 40 = Arduino 1.8.x ARC32
+// ............................................................................. Arduino 1.8.x Curie architecture specific
 
 /*
     main.cpp userspace main loop for Arduino 101 family boards
@@ -3333,9 +3879,9 @@ int main(void)
 }
 
 
-#elif defined(__SAM3X8E__)
-#warning MAIN_SECTION 29 = Arduino 1.6.x SAM
-// ............................................................................. Arduino 1.6.x SAM architecture specific
+#elif defined(__SAM3X8E__) || defined(ARDUINO_ARCH_SAM)
+#warning MAIN_SECTION 29 = Arduino 1.8.x SAM
+// ............................................................................. Arduino 1.8.x SAM architecture specific
 
 /*
     main.cpp - Main loop for Arduino sketches
@@ -3343,38 +3889,16 @@ int main(void)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
-    Licence as published by the Free Software Foundation; either
-    version 2.1 of the Licence, or (at your option) any later version.
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
 
     This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public Licence for more details.
+    Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public
-    Licence along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-#define ARDUINO_MAIN
-#include "Arduino.h"
-
-/*
-    main.cpp - Main loop for Arduino sketches
-    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    Licence as published by the Free Software Foundation; either
-    version 2.1 of the Licence, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public Licence for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    Licence along with this library; if not, write to the Free Software
+    License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
@@ -3429,9 +3953,10 @@ int main(void)
     return 0;
 }
 
-#elif defined(__SAMD21G18A__)
-#warning MAIN_SECTION 30 = Arduino 1.6.x SAMD
-// ............................................................................. Arduino 1.6.x SAMD architecture specific
+
+#elif defined(__SAMD21G18A__) || defined(ARDUINO_ARCH_SAMD)
+#warning MAIN_SECTION 30 = Arduino 1.8.x SAMD
+// ............................................................................. Arduino 1.8.x SAMD architecture specific
 
 /*
     Copyright (c) 2015 Arduino LLC.  All right reserved.
@@ -3459,12 +3984,17 @@ int main(void)
 void initVariant() __attribute__((weak));
 void initVariant() { }
 
+// Initialize C library
+extern "C" void __libc_init_array(void);
+
 /*
     \brief Main entry point of Arduino application
 */
 int main(void)
 {
     init();
+
+    __libc_init_array();
 
     initVariant();
 
@@ -3488,10 +4018,9 @@ int main(void)
     return 0;
 }
 
-
 #else
-#warning MAIN_SECTION 31 = Arduino 1.6.x AVR
-// ............................................................................. Arduino 1.6.x AVR architecture specific
+#warning MAIN_SECTION 31 = Arduino 1.8.x AVR
+// ............................................................................. Arduino 1.8.x AVR architecture specific
 
 /*
     main.cpp - Main loop for Arduino sketches
@@ -3552,196 +4081,7 @@ int main(void)
     return 0;
 }
 
-#endif                                                                          // end architecture Arduino 1.6.0
-
-#else
-// ----------------------------------------------------------------------------- Arduino 1.7.x specific
-
-#if defined(__SAM3X8E__)
-#warning MAIN_SECTION 32 = Arduino 1.7.x SAM
-// ............................................................................. Arduino 1.7.x SAM architecture specific
-
-/*
-    main.cpp - Main loop for Arduino sketches
-    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-#define ARDUINO_MAIN
-#include "Arduino.h"
-
-/*
-    Cortex-M3 Systick IT handler
-*/
-/*
-    extern void SysTick_Handler( void )
-    {
-    // Increment tick count each ms
-    TimeTick_Increment() ;
-    }
-*/
-
-// Weak empty variant initialization function.
-// May be redefined by variant files.
-void initVariant() __attribute__((weak));
-void initVariant() { }
-
-/*
-    \brief Main entry point of Arduino application
-*/
-int main(void)
-{
-    init();
-
-    initVariant();
-
-    delay(1);
-
-#if defined(USBCON)
-    USBDevice.attach();
-#endif
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-        if (serialEventRun)
-        {
-            serialEventRun();
-        }
-    }
-
-    return 0;
-}
-
-#elif defined(__SAMD21G18A__)
-#warning MAIN_SECTION 33 = Arduino 1.7.x SAMD
-// ............................................................................. Arduino 1.7.x SAMD architecture specific
-
-/*
-    main.cpp - Main loop for Arduino sketches
-    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-#define ARDUINO_MAIN
-#include "Arduino.h"
-
-/*
-    \brief Main entry point of Arduino application
-*/
-int main(void)
-{
-    init();
-
-    delay(1);
-#if defined(USBCON)
-    USBDevice.init();
-    USBDevice.attach();
-#endif
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-        if (serialEventRun)
-        {
-            serialEventRun();
-        }
-    }
-
-    return 0;
-}
-
-#else
-#warning MAIN_SECTION 34 = Arduino 1.7.x AVR
-// ............................................................................. Arduino 1.7.x AVR architecture specific
-
-/*
-    main.cpp - Main loop for Arduino sketches
-    Copyright (c) 2005-2013 Arduino Team.  All right reserved.
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
-#include <Arduino.h>
-
-//Declared weak in Arduino.h to allow user redefinitions.
-int atexit(void (*func)())
-{
-    return 0;
-}
-
-// Weak empty variant initialization function.
-// May be redefined by variant files.
-void initVariant() __attribute__((weak));
-void initVariant() { }
-
-int main(void)
-{
-    init();
-
-    initVariant();
-
-#if defined(USBCON)
-    USBDevice.attach();
-#endif
-
-    setup();
-
-    for (;;)
-    {
-        loop();
-        if (serialEventRun)
-        {
-            serialEventRun();
-        }
-    }
-
-    return 0;
-}
-
-#endif                                                                          // end architecture Arduino 1.7.0
+#endif                                                                          // end architecture Arduino 1.8.x
 
 #endif                                                                          // end Arduino
 

@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 # 
@@ -18,9 +18,9 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := Digistump
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_ARCH_OAK EMBEDXCODE=$(RELEASE_NOW) OAK
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_ARCH_OAK EMBEDXCODE=$(RELEASE_NOW) OAK
 APPLICATION_PATH := $(DIGISTUMP_OAK_PATH)
-PLATFORM_VERSION := $(DIGISTUMP_OAK_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := $(DIGISTUMP_OAK_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/oak/$(DIGISTUMP_OAK_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/xtensa-lx106-elf-gcc/$(DIGISTUMP_OAK_EXTENSA_RELEASE)

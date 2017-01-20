@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,15 +17,15 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := panStamp
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_PANSTAMP_AVR ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW) PANSTAMP_AVR
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_PANSTAMP_AVR ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW) PANSTAMP_AVR
 APPLICATION_PATH := $(PANSTAMP_AVR_PATH)
-PLATFORM_VERSION := AVR $(PANSTAMP_AVR_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := AVR $(PANSTAMP_AVR_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/avr/$(PANSTAMP_AVR_RELEASE)
 #TOOL_CHAIN_PATH   = $(ARDUINO_PATH)/hardware/tools/avr
 #OTHER_TOOLS_PATH  = $(ARDUINO_PATH)/hardware/tools/avr
-TOOL_CHAIN_PATH   = $(PANSTAMP_AVR_PATH)/tools/avr-gcc/$(AVR_GCC_RELEASE)
-OTHER_TOOLS_PATH  = $(PANSTAMP_AVR_PATH)/tools/avrdude/$(AVRDUDE_RELEASE)
+TOOL_CHAIN_PATH   = $(PANSTAMP_AVR_PATH)/tools/avr-gcc/$(ARDUINO_AVR_GCC_RELEASE)
+OTHER_TOOLS_PATH  = $(PANSTAMP_AVR_PATH)/tools/avrdude/$(ARDUINO_AVRDUDE_RELEASE)
 
 AVRDUDE_PATH         = $(OTHER_TOOLS_PATH)
 
@@ -74,6 +74,7 @@ p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility,$(A
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+p1100   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(p1100),$(wildcard $(dir)/*.cpp)) # */
 BUILD_APP_LIB_C_SRC   = $(foreach dir,$(p1100),$(wildcard $(dir)/*.c)) # */

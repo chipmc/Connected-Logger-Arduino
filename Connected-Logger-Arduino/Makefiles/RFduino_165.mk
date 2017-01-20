@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -18,9 +18,9 @@
 #
 PLATFORM         := RFduino
 BUILD_CORE        = $(call PARSE_BOARD,$(BOARD_TAG),build.core)
-PLATFORM_TAG      = EMBEDXCODE=$(RELEASE_NOW) ARDUINO=10610 RFDUINO
+PLATFORM_TAG      = EMBEDXCODE=$(RELEASE_NOW) ARDUINO=10801 RFDUINO
 APPLICATION_PATH := $(RFDUINO_PATH)
-PLATFORM_VERSION := $(RFDUINO_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := $(RFDUINO_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/RFduino/$(RFDUINO_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/4.8.3-2014q1

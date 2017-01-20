@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,7 +17,7 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := Moteino
-PLATFORM_TAG      = ARDUINO=10610 MOTEINO EMBEDXCODE=$(RELEASE_NOW) ARDUINO_ARCH_AVR
+PLATFORM_TAG      = ARDUINO=10801 MOTEINO EMBEDXCODE=$(RELEASE_NOW) ARDUINO_ARCH_AVR
 PLATFORM_VERSION := $(MOTEINO_AVR_RELEASE) for Arduino 1.6.5
 
 APPLICATION_PATH := $(ARDUINO_PATH)
@@ -25,8 +25,8 @@ HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/arduino/avr
 
 
 # With ArduinoCC 1.6.6, AVR 1.6.9 used to be under ~/Library
-TOOL_CHAIN_PATH   = $(ARDUINO_AVR_PATH)/tools/avr-gcc/$(AVR_GCC_RELEASE)
-OTHER_TOOLS_PATH  = $(ARDUINO_AVR_PATH)/tools/avrdude/$(AVRDUDE_RELEASE)
+TOOL_CHAIN_PATH   = $(ARDUINO_AVR_PATH)/tools/avr-gcc/$(ARDUINO_AVR_GCC_RELEASE)
+OTHER_TOOLS_PATH  = $(ARDUINO_AVR_PATH)/tools/avrdude/$(ARDUINO_AVRDUDE_RELEASE)
 
 # With ArduinoCC 1.6.7, AVR 1.6.9 is back under Arduino.app
 ifeq ($(wildcard $(TOOL_CHAIN_PATH)),)

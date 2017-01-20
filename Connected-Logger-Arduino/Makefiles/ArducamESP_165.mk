@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -18,9 +18,9 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := ArduCAM
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_ARCH_ARDUCAM_ESP8266_UNO EMBEDXCODE=$(RELEASE_NOW) ESP8266
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_ARCH_ARDUCAM_ESP8266_UNO EMBEDXCODE=$(RELEASE_NOW) ESP8266
 APPLICATION_PATH := $(ARDUCAM_ESP_PATH)
-PLATFORM_VERSION := $(ARDUCAM_ESP_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := $(ARDUCAM_ESP_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/ArduCAM_ESP8266_UNO/$(ARDUCAM_ESP_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/xtensa-lx106-elf-gcc/$(ARDUCAM_ESP_EXTENSA_RELEASE)

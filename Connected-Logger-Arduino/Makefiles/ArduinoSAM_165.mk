@@ -3,12 +3,12 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
 #
-# Last update: Aug 24, 2016 release 5.1.7
+# Last update: Jan 10, 2017 release 6.0.6
 
 
 
@@ -20,9 +20,9 @@ include $(MAKEFILE_PATH)/About.mk
 #
 PLATFORM         := Arduino
 BUILD_CORE       := sam
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_ARCH_SAM EMBEDXCODE=$(RELEASE_NOW) ARDUINO_$(BOARD_NAME) $(filter __%__ ,$(GCC_PREPROCESSOR_DEFINITIONS))
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_ARCH_SAM EMBEDXCODE=$(RELEASE_NOW) ARDUINO_$(BOARD_NAME) $(filter __%__ ,$(GCC_PREPROCESSOR_DEFINITIONS))
 APPLICATION_PATH := $(ARDUINO_PATH)
-PLATFORM_VERSION := SAM $(ARDUINO_SAM_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := SAM $(ARDUINO_SAM_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(ARDUINO_SAM_PATH)/hardware/sam/$(ARDUINO_SAM_RELEASE)
 TOOL_CHAIN_PATH   = $(ARDUINO_SAM_PATH)/tools/arm-none-eabi-gcc/4.8.3-2014q1
@@ -88,7 +88,7 @@ else ifeq ($(UPLOADER),jlink)
 
 else
     UPLOADER          = bossac
-    UPLOADER_PATH     = $(OTHER_TOOLS_PATH)/bossac/$(BOSSAC_RELEASE)
+    UPLOADER_PATH     = $(OTHER_TOOLS_PATH)/bossac/$(ARDUINO_BOSSAC_RELEASE)
     UPLOADER_EXEC     = $(UPLOADER_PATH)/bossac
     UPLOADER_PORT     = $(subst /dev/,,$(AVRDUDE_PORT))
     UPLOADER_OPTS     = -i -d --port=$(UPLOADER_PORT) -U $(call PARSE_BOARD,$(BOARD_TAG),upload.native_usb) -e -w -v -b
@@ -167,6 +167,7 @@ sam165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility
 sam165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 sam165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 sam165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+sam165_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(sam165_10),$(wildcard $(dir)/*.cpp)) # */
 BUILD_APP_LIB_C_SRC   = $(foreach dir,$(sam165_10),$(wildcard $(dir)/*.c)) # */
@@ -227,7 +228,8 @@ endif
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION  ?= -O0 -g
+	OPTIMISATION  ?= -Os -g
+#    OPTIMISATION  ?= -Os -g
 else
     OPTIMISATION  ?= -Os -g3
 endif

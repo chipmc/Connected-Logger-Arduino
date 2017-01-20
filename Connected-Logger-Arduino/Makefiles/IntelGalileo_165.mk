@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -21,9 +21,9 @@ include $(MAKEFILE_PATH)/About.mk
 #
 PLATFORM         := IntelArduino
 BUILD_CORE       := Galileo
-PLATFORM_TAG      = ARDUINO=10610 __ARDUINO_X86__ EMBEDXCODE=$(RELEASE_NOW)
+PLATFORM_TAG      = ARDUINO=10801 __ARDUINO_X86__ EMBEDXCODE=$(RELEASE_NOW)
 APPLICATION_PATH := $(INTEL_PATH)
-PLATFORM_VERSION := $(BUILD_CORE) $(INTEL_GALILEO_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := $(BUILD_CORE) $(INTEL_GALILEO_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/i586/$(INTEL_GALILEO_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/i586-poky-linux-uclibc/$(INTEL_I586_RELEASE)/i586/pokysdk/usr/bin/i586-poky-linux-uclibc
@@ -118,12 +118,14 @@ a1001   += $(foreach dir,$(APP_LIB_PATH_1),$(patsubst %,$(dir)/%/utility,$(APP_L
 a1001   += $(foreach dir,$(APP_LIB_PATH_1),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST_1)))
 a1001   += $(foreach dir,$(APP_LIB_PATH_1),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST_1)))
 a1001   += $(foreach dir,$(APP_LIB_PATH_1),$(patsubst %,$(dir)/%/src/arch/x86,$(APP_LIBS_LIST_1)))
+a1001   += $(foreach dir,$(APP_LIB_PATH_1),$(patsubst %,$(dir)/%/src/x86,$(APP_LIBS_LIST_1)))
 
 a1002    = $(foreach dir,$(APP_LIB_PATH_2),$(patsubst %,$(dir)/%,$(APP_LIBS_LIST_2)))
 a1002   += $(foreach dir,$(APP_LIB_PATH_2),$(patsubst %,$(dir)/%/utility,$(APP_LIBS_LIST_2)))
 a1002   += $(foreach dir,$(APP_LIB_PATH_2),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST_2)))
 a1002   += $(foreach dir,$(APP_LIB_PATH_2),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST_2)))
 a1002   += $(foreach dir,$(APP_LIB_PATH_2),$(patsubst %,$(dir)/%/src/arch/x86,$(APP_LIBS_LIST_2)))
+a1002   += $(foreach dir,$(APP_LIB_PATH_2),$(patsubst %,$(dir)/%/src/x86,$(APP_LIBS_LIST_2)))
 
 APP_LIB_CPP_SRC = $(foreach dir,$(a1001) $(a1002),$(wildcard $(dir)/*.cpp)) # */
 APP_LIB_C_SRC   = $(foreach dir,$(a1001) $(a1002),$(wildcard $(dir)/*.c)) # */
@@ -144,7 +146,8 @@ MCU             = $(call PARSE_BOARD,$(BOARD_TAG),build.mcu)
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION   ?= -O0 -g
+    OPTIMISATION   ?= -Os -g
+#    OPTIMISATION   ?= -O0 -g
 else
     OPTIMISATION   ?= -Os
 endif

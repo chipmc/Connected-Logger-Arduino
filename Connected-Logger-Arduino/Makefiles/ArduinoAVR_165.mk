@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -33,7 +33,7 @@ else ifneq ($(findstring ADAFRUIT,$(GCC_PREPROCESSOR_DEFINITIONS)),)
 
 else
     PLATFORM         := Arduino
-    PLATFORM_TAG      = ARDUINO=10610 ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW) ARDUINO_$(ARDUINO_NAME)
+    PLATFORM_TAG      = ARDUINO=10801 ARDUINO_ARCH_AVR EMBEDXCODE=$(RELEASE_NOW) ARDUINO_$(ARDUINO_NAME)
     APPLICATION_PATH := $(ARDUINO_PATH)
     BOARDS_TXT       := $(APPLICATION_PATH)/hardware/arduino/avr/boards.txt
 endif
@@ -46,6 +46,7 @@ APP_LIB_PATH        := $(APPLICATION_PATH)/libraries
 #BOARDS_TXT       := $(HARDWARE_PATH)/boards.txt
 ARDUINO_NAME         =  $(call PARSE_BOARD,$(BOARD_TAG),build.board)
 BUILD_CORE           = avr
+PLATFORM_VERSION    := 'AVR (native) for Arduino $(ARDUINO_IDE_RELEASE)'
 
 
 # Sketchbook/Libraries path
@@ -83,8 +84,7 @@ NM      = $(APP_TOOLS_PATH)/avr-nm
 # Another example of Arduino's quick and dirty job
 #
 BOARD_TAGS_LIST   = $(BOARD_TAG) $(BOARD_TAG1) $(BOARD_TAG2)
-
-SEARCH_FOR  = $(strip $(foreach t,$(1),$(call PARSE_BOARD,$(t),$(2))))
+SEARCH_FOR        = $(strip $(foreach t,$(1),$(call PARSE_BOARD,$(t),$(2))))
 
 ifeq ($(BOARD_NAME),)
     BOARD_NAME          := $(call SEARCH_FOR,$(BOARD_TAGS_LIST),name)

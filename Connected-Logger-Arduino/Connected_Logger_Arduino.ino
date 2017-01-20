@@ -117,7 +117,7 @@
 #define YELLOWLED 6       // The yellow LED
 #define LEDPWR 7          // This pin turns on and off the LEDs
 // Finally, here are the variables I want to change often and pull them all together here
-#define SOFTWARERELEASENUMBER "1.3.6"
+#define SOFTWARERELEASENUMBER "1.3.7"
 #define PARKCLOSES 19
 #define PARKOPENS 7
 
@@ -156,7 +156,7 @@ void CheckForBump(); // Check for bump
 void pinChangeISR();      // Thie is the Interrrupt Service Routine for the pin change interrupt
 void sleepNow();  // Puts the Arduino to Sleep
 void NonBlockingDelay(int millisDelay);  // Used for a non-blocking delay
-int freeRam ();  // Debugging code, to check usage of RAM
+int freeRam();  // Debugging code, to check usage of RAM
 
 
 // Prototypes for Date and Time Functions
@@ -208,7 +208,7 @@ float stateOfCharge = 0;            // stores battery charge level value
 //Menu and Program Variables
 unsigned long lastBump = 0;         // set the time of an event
 boolean ledState = LOW;                 // variable used to store the last LED status, to toggle the light
-int delaySleep = 1500;               // Wait until going back to sleep so we can enter commands
+int delaySleep = 300;               // Wait until going back to sleep so we can enter commands
 int menuChoice=0;                   // Menu Selection
 boolean refreshMenu = true;         //  Tells whether to write the menu
 boolean inTest = false;             // Are we in a test or not
@@ -382,11 +382,14 @@ void loop()
                 accelInputValue = (Serial.parseInt());
                 Serial.print(F("accelSensitivity set to: "));
                 Serial.println(accelInputValue);
-                FRAMwrite8(SENSITIVITYADDR, 10-accelInputValue);
+                accelSensitivity = 10-accelInputValue;
+                FRAMwrite8(SENSITIVITYADDR, accelSensitivity);
                 TakeTheBus();
                     initMMA8452(accelFullScaleRange, dataRate);  // init the accelerometer if communication is OK
                 GiveUpTheBus();
-                Serial.println(F("MMA8452Q is online..."));
+                Serial.print(F("Accelsensitivity = "));
+                Serial.print(accelSensitivity);
+                Serial.println(F(" MMA8452Q is online..."));
                 break;
             case '4':  // Change the debounce value
                 Serial.println(F("Enter debounce in mSec"));
@@ -557,11 +560,15 @@ void CheckForBump() // This is where we check to see if an interrupt is set when
         GiveUpTheBus();
         if ((source & 0x08)==0x08 && millis() >= lastBump + debounce)  // We are only interested in the TAP register and ignore debounced taps
         {
+            Serial.println(F("It is a tap - counting"));
             lastBump = millis();    // Reset last bump timer
             TakeTheBus();
                 t = RTC.get();
             GiveUpTheBus();
-            if (t == 0) return;     // This means there was an error in reading the real time clock - very rare in testing so will simply throw out this count
+            if (t == 0) {
+                Serial.println(F("t=0 throwing it out"));
+                return;     // This means there was an error in reading the real time clock - very rare in testing so will simply throw out this count
+            }
             if (HOURLYPERIOD != currentHourlyPeriod) {
                 LogHourlyEvent();
             }
@@ -583,6 +590,15 @@ void CheckForBump() // This is where we check to see if an interrupt is set when
             ledState = !ledState;              // toggle the status of the LEDPIN:
             digitalWrite(REDLED, ledState);    // update the LED pin itself
         }
+        else if (millis() < lastBump + debounce) {
+            Serial.print(F("Tap was debounced - lastBump = "));
+            Serial.print(lastBump);
+            Serial.print(F(" debounce = "));
+            Serial.print(debounce);
+            Serial.print(F(" millis() = "));
+            Serial.println(millis());
+        }
+        else if ((source & 0x08) != 0x08) Serial.println(F("Interrupt not a tap"));
     }
 }
 
@@ -637,7 +653,7 @@ void LogHourlyEvent() // Log Hourly Event()
     time_t LogTime = FRAMread32(CURRENTCOUNTSTIME);     // This is the last event recorded - this sets the hourly period
     breakTime(LogTime, timeElement);                    // Break the time into its pieces
     unsigned int pointer = (HOURLYOFFSET + FRAMread16(HOURLYPOINTERADDR))*WORDSIZE;  // get the pointer from memory and add the offset
-    LogTime -= 60*timeElement.Minute - timeElement.Second; // So, we need to subtract the minutes and seconds needed to take to the top of the hour
+    LogTime -= (60*timeElement.Minute + timeElement.Second); // So, we need to subtract the minutes and seconds needed to take to the top of the hour
     FRAMwrite32(pointer, LogTime);   // Write to FRAM - this is the end of the period
     FRAMwrite16(pointer+HOURLYCOUNTOFFSET,hourlyPersonCount);
     TakeTheBus();

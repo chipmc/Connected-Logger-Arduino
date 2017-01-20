@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -179,6 +179,7 @@ cc3200_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/utility
 cc3200_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src,$(APP_LIBS_LIST)))
 cc3200_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/utility,$(APP_LIBS_LIST)))
 cc3200_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/arch/$(BUILD_CORE),$(APP_LIBS_LIST)))
+cc3200_10   += $(foreach dir,$(BUILD_APP_LIB_PATH),$(patsubst %,$(dir)/%/src/$(BUILD_CORE),$(APP_LIBS_LIST)))
 
 BUILD_APP_LIB_CPP_SRC = $(foreach dir,$(cc3200_10),$(wildcard $(dir)/*.cpp)) # */
 BUILD_APP_LIB_C_SRC   = $(foreach dir,$(cc3200_10),$(wildcard $(dir)/*.c)) # */
@@ -198,7 +199,8 @@ VARIANT_PATH = $(HARDWARE_PATH)/variants/$(VARIANT)
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION   ?= -O0 -ggdb
+    OPTIMISATION   ?= -Os -ggdb
+#    OPTIMISATION   ?= -O0 -ggdb
 else
     OPTIMISATION   ?= -Os
 endif

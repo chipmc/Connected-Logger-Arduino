@@ -3,7 +3,7 @@
 # ----------------------------------
 # Embedded Computing on Xcode
 #
-# Copyright © Rei VILO, 2010-2016
+# Copyright © Rei VILO, 2010-2017
 # http://embedxcode.weebly.com
 # All rights reserved
 #
@@ -17,9 +17,9 @@ include $(MAKEFILE_PATH)/About.mk
 # ----------------------------------
 #
 PLATFORM         := LinkIt
-PLATFORM_TAG      = ARDUINO=10610 ARDUINO_ARCH_MTK EMBEDXCODE=$(RELEASE_NOW) __LINKIT_ONE__ LINKIT
+PLATFORM_TAG      = ARDUINO=10801 ARDUINO_ARCH_MTK EMBEDXCODE=$(RELEASE_NOW) __LINKIT_ONE__ LINKIT
 APPLICATION_PATH := $(LINKIT_ARM_PATH)
-PLATFORM_VERSION := One $(LINKIT_ONE_RELEASE) for Arduino $(ARDUINO_CC_RELEASE)
+PLATFORM_VERSION := One $(LINKIT_ONE_RELEASE) for Arduino $(ARDUINO_IDE_RELEASE)
 
 HARDWARE_PATH     = $(APPLICATION_PATH)/hardware/arm/$(LINKIT_ONE_RELEASE)
 TOOL_CHAIN_PATH   = $(APPLICATION_PATH)/tools/arm-none-eabi-gcc/4.8.3-2014q1
@@ -117,7 +117,8 @@ USB_FLAGS   += -DUSB_PRODUCT='$(USB_PRODUCT)'
 
 # ~
 ifeq ($(MAKECMDGOALS),debug)
-    OPTIMISATION   ?= -O0 -g
+    OPTIMISATION   ?= -Os -g
+#    OPTIMISATION   ?= -O0 -g
 else
     OPTIMISATION   ?= -Os
 endif
