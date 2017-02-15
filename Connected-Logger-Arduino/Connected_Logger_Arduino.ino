@@ -208,7 +208,7 @@ float stateOfCharge = 0;            // stores battery charge level value
 //Menu and Program Variables
 unsigned long lastBump = 0;         // set the time of an event
 boolean ledState = LOW;                 // variable used to store the last LED status, to toggle the light
-int delaySleep = 300;               // Wait until going back to sleep so we can enter commands
+int delaySleep = 1000;               // Wait until going back to sleep so we can enter commands
 int menuChoice=0;                   // Menu Selection
 boolean refreshMenu = true;         //  Tells whether to write the menu
 boolean inTest = false;             // Are we in a test or not
